@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnApp Project Documentation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h2 { color: #34495e; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 30px; }
+        h3 { color: #4a5568; }
+        p { margin-bottom: 15px; }
+        ul, ol { margin-bottom: 20px; }
+        code { background-color: #f8f9fa; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+        pre { background-color: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        @media print {
+            body { padding: 0; max-width: 100%; }
+            h2 { page-break-before: always; }
+        }
+    </style>
+</head>
+<body>
+    <h1>LearnApp: An AI-Powered Interactive Educational Platform</h1>
+<h2>1. INTRODUCTION</h2>
+<h3>1.1 BACKGROUND</h3>
+<p>The rapid evolution of educational technology has shifted the paradigm from traditional, static learning methodologies to interactive, digital platforms. Computer Science education, particularly in complex subjects like Operating Systems, Computer Networks, and Data Structures, requires high cognitive engagement. Gamification and interactive simulations have proven to be highly effective in reducing cognitive load and increasing student retention.</p>
+<h3>1.2 PROBLEM STATEMENT</h3>
+<p>Current educational platforms often rely on static content such as video lectures and multiple-choice quizzes. They lack dynamic, interactive simulations that allow students to visualize complex algorithms (e.g., CPU Scheduling, Network Protocols, Tree Traversal). Furthermore, creating these interactive simulations manually is extremely time-consuming for educators, resulting in a scarcity of high-quality, customized interactive content.</p>
+<h3>1.3 OBJECTIVES</h3>
+<ol>
+<li>To develop a web-based educational platform that hosts interactive games and simulations for Computer Science topics.</li>
+<li>To implement a secure, role-based access control system (Students vs. Teachers) using Google OAuth.</li>
+<li>To integrate an AI-powered game generation tool using Large Language Models (LLMs) that allows teachers to dynamically create new playable simulations based on natural language prompts.</li>
+<li>To provide a responsive, user-friendly interface that categorizes content by Subjects and Topics.</li>
+</ol>
+<h3>1.4 OVERVIEW</h3>
+<p>LearnApp is a modern web application built using the PERN stack (PostgreSQL, Express.js, React.js, Node.js). It features a robust backend for managing users, subjects, topics, and game metadata. The frontend provides interactive gameplay using React state management. A key innovation is the integration with the Groq AI API, allowing dynamic generation of React-based game components on the fly.</p>
+<hr>
+<h2>2. LITERATURE REVIEW</h2>
+<h3>2.1 Traditional vs Interactive Learning</h3>
+<p>Studies show that interactive learning environments significantly improve student engagement compared to passive learning. Active manipulation of variables in simulations helps students build better mental models of abstract concepts.</p>
+<h3>2.2 Gamification in Education</h3>
+<p>Gamification involves applying game-design elements (scoring, levels, immediate feedback) to non-game contexts. It increases intrinsic motivation and provides a safe environment for students to fail and learn iteratively.</p>
+<h3>2.3 Role of AI in Content Generation</h3>
+<p>The advent of advanced LLMs (like Llama 3) has enabled the automated generation of code. In education, this allows for the rapid prototyping of customized learning tools, drastically reducing the development overhead for educators.</p>
+<h3>2.4 Modern Web Architectures for E-Learning</h3>
+<p>Single Page Applications (SPAs) built with libraries like React offer fluid, app-like experiences. When combined with RESTful APIs and relational databases, they provide a scalable architecture suitable for handling concurrent student access.</p>
+<h3>2.5 Existing Platforms and Limitations</h3>
+<p>While platforms like Kahoot! or Quizlet offer gamification, they are limited to flashcards and quizzes. They do not offer deep, algorithm-based simulations (like playing as a Network Protocol). LearnApp bridges this gap.</p>
+<hr>
+<h2>3. REQUIREMENT ANALYSIS</h2>
+<h3>3.1 FUNCTIONAL REQUIREMENTS</h3>
+<ul>
+<li><strong>Authentication</strong>: Users must be able to log in securely using Google OAuth.</li>
+<li><strong>Role Management</strong>: The system must differentiate between Teachers (admin privileges) and Students.</li>
+<li><strong>Content Browsing</strong>: Students must be able to browse subjects, topics, and available games.</li>
+<li><strong>Gameplay</strong>: Students must be able to play interactive simulations and receive immediate feedback/scores.</li>
+<li><strong>AI Game Generation</strong>: Teachers must be able to generate new games by providing a title, topic, and natural language instructions to an AI agent.</li>
+<li><strong>Content Management</strong>: Teachers must be able to delete outdated or incorrect games.</li>
+</ul>
+<h3>3.2 NON-FUNCTIONAL REQUIREMENTS</h3>
+<ul>
+<li><strong>Performance</strong>: The UI should respond within 200ms. AI generation should complete within 15 seconds.</li>
+<li><strong>Security</strong>: API endpoints must be protected using JWT tokens. SQL injection must be prevented using parameterized queries.</li>
+<li><strong>Scalability</strong>: The database schema must efficiently handle thousands of user scores and logs.</li>
+<li><strong>Usability</strong>: The interface must be highly intuitive, utilizing modern design principles and Tailwind CSS.</li>
+</ul>
+<hr>
+<h2>4. DESIGN</h2>
+<h3>4.1 OVERVIEW DIAGRAM</h3>
+<p>The system follows a 3-tier architecture:</p>
+<ul>
+<li><strong>Presentation Layer</strong>: React.js frontend utilizing Tailwind CSS and Lucide React icons.</li>
+<li><strong>Application Layer</strong>: Node.js/Express backend handling business logic, JWT validation, and Groq API orchestration.</li>
+<li><strong>Data Layer</strong>: PostgreSQL database managing relational data (Users, Subjects, Topics, Games, Scores).</li>
+</ul>
+<h3>4.2 UML DIAGRAMS</h3>
+<h4>4.2.1 USE CASE DIAGRAM</h4>
+<ul>
+<li><strong>Student</strong>: Logs in -&gt; Browses Topics -&gt; Plays Game -&gt; Submits Score.</li>
+<li><strong>Teacher</strong>: Logs in -&gt; Promotes Users -&gt; Generates AI Game -&gt; Deletes Game -&gt; Views Analytics.</li>
+</ul>
+<h4>4.2.2 CLASS DIAGRAM</h4>
+<p>Main Entities:</p>
+<ul>
+<li><code>User</code> (id, google_id, email, role)</li>
+<li><code>Subject</code> (id, name)</li>
+<li><code>Topic</code> (id, subject_id, name)</li>
+<li><code>Game</code> (id, subject_id, topic_id, title, type)</li>
+<li><code>Score</code> (id, user_id, game_id, score)</li>
+</ul>
+<h4>4.2.3 SEQUENCE DIAGRAM (AI Generation)</h4>
+<ol>
+<li>Teacher submits prompt via UI.</li>
+<li>React app sends POST to Express API.</li>
+<li>Express API constructs system prompt and sends to Groq API.</li>
+<li>Groq API returns React JSX code.</li>
+<li>Express API saves JSX to file system and inserts record to PostgreSQL.</li>
+<li>React app updates UI with new game.</li>
+</ol>
+<h4>4.2.4 ACTIVITY DIAGRAM (Playing a Game)</h4>
+<p>Start -&gt; Select Subject -&gt; Select Topic -&gt; Choose Game -&gt; Read Instructions -&gt; Play Simulation -&gt; Win/Lose -&gt; Record Score -&gt; End.</p>
+<h4>4.2.5 COMPONENT DIAGRAM</h4>
+<ul>
+<li><code>GamesPage.jsx</code>: Renders the accordion list of games and handles the AI modal.</li>
+<li><code>AuthContext</code>: Manages JWT state across the app.</li>
+<li><code>games.js</code> (Route): Handles CRUD for games and AI proxying.</li>
+<li><code>db.js</code>: PostgreSQL connection pool.</li>
+</ul>
+<h4>4.2.6 DEPLOYMENT DIAGRAM</h4>
+<ul>
+<li>Client Browser &lt;--&gt; Node.js Server (Port 5000) &lt;--&gt; PostgreSQL Database (Port 5432)</li>
+<li>Node.js Server &lt;--&gt; External Groq AI API</li>
+</ul>
+<h3>4.3 ALGORITHMS</h3>
+<h4>4.3.1 ALGORITHM 1: AI Code Generation Pipeline</h4>
+<ol>
+<li>Receive instructions and title from user.</li>
+<li>Inject strict system prompt enforcing React constraints (Tailwind, Lucide icons, single file).</li>
+<li>Call LLM API (llama-3.3-70b-versatile).</li>
+<li>Parse response using Regex to extract JSX code block.</li>
+<li>Write code to file system using Node <code>fs</code> module.</li>
+<li>Commit metadata to database.</li>
+</ol>
+<h4>4.3.2 ALGORITHM 2: Binary Search Tree Insertion (Game Logic)</h4>
+<ol>
+<li>Receive incoming node value.</li>
+<li>If tree is empty, set as root.</li>
+<li>If value &lt; current node, traverse left. If left is null, insert.</li>
+<li>If value &gt; current node, traverse right. If right is null, insert.</li>
+<li>Compare player&#39;s choice against calculated correct path.</li>
+</ol>
+<h4>4.3.3 ALGORITHM 3: FCFS CPU Scheduling (Game Logic)</h4>
+<ol>
+<li>Queue incoming processes with Burst Times.</li>
+<li>Process processes strictly in arrival order.</li>
+<li>Calculate Waiting Time = Previous Process Completion Time - Current Arrival Time.</li>
+<li>Validate player&#39;s assignment of processes to the CPU timeline.</li>
+</ol>
+<h4>4.3.4 ALGORITHM 4: Banker&#39;s Algorithm (Game Logic)</h4>
+<ol>
+<li>Track Available, Max, and Allocation matrices.</li>
+<li>Need = Max - Allocation.</li>
+<li>When player grants request: Check if Request &lt;= Need and Request &lt;= Available.</li>
+<li>If true, temporarily allocate. If system remains in safe state, approve. Else, deny.</li>
+</ol>
+<h4>4.3.5 ALGORITHM 5: Role-Based JWT Auth</h4>
+<ol>
+<li>Receive Google OAuth credential.</li>
+<li>Verify token with Google Library.</li>
+<li>Query DB by email. If new user, assign default role (Teacher for admin email, Student for others).</li>
+<li>Sign JWT containing user ID and Role.</li>
+<li>Middleware verifies JWT on every protected route.</li>
+</ol>
+<hr>
+<h2>5. CODING, IMPLEMENTATION &amp; RESULTS</h2>
+<h3>5.1 PSEUDO CODE (AI Generation Route)</h3>
+<pre><code class="language-javascript">route POST &#39;/api/games/generate&#39;:
+  verify_teacher_token()
+  prompt = construct_prompt(request.body)
+  response = call_groq_api(prompt)
+  code = extract_jsx(response)
+  file_path = &quot;frontend/src/components/&quot; + request.body.title + &quot;Game.jsx&quot;
+  save_to_disk(file_path, code)
+  insert_db(request.body)
+  return success
+</code></pre>
+<h3>5.2 EXPLANATION OF KEY FUNCTIONS</h3>
+<ul>
+<li><strong><code>authenticateToken</code></strong>: Express middleware that intercepts requests, reads the Authorization header, verifies the JWT secret, and attaches the user object to the request.</li>
+<li><strong><code>requireRole(role)</code></strong>: Middleware that checks if <code>req.user.role</code> matches the required permission level before allowing access to destructive endpoints.</li>
+<li><strong><code>playGame(game)</code></strong>: React function that sets the active game state and dynamically renders the corresponding imported React component.</li>
+</ul>
+<h3>5.3 METHOD OF IMPLEMENTATION</h3>
+<p>The project was implemented using Vite for rapid React frontend development and Express for a lightweight backend. PostgreSQL was chosen for its robust relational integrity.</p>
+<h4>5.3.1 OUTPUT SCREENS</h4>
+<p><em>(Note: Attach screenshots of the Login Page, Dashboard, Games Accordion, AI Create Game Modal, and an active Game Simulation here before printing).</em></p>
+<h4>5.3.2 RESULT ANALYSIS</h4>
+<p>The platform successfully allows instant login via Google. The AI generation feature successfully outputs playable mini-games (e.g., Tree Climber, Sorting Master) in under 10 seconds. Database insertions maintain referential integrity with cascading deletes functioning as expected.</p>
+<hr>
+<h2>6. TESTING &amp; VALIDATION</h2>
+<ul>
+<li><strong>Authentication Testing</strong>: Verified that unauthorized users receive 401/403 errors when attempting to access Teacher routes.</li>
+<li><strong>Integration Testing</strong>: Verified that deleting a game from the UI successfully propagates the DELETE command to the PostgreSQL database and removes the item from the React state without requiring a refresh.</li>
+<li><strong>AI Validation</strong>: Tested multiple prompts to ensure the LLM strictly adheres to returning only JSX code without markdown wrappers that break the compilation.</li>
+</ul>
+<hr>
+<h2>7. CONCLUSION</h2>
+<p>LearnApp successfully demonstrates a modern approach to interactive education. By combining a robust PERN stack architecture with cutting-edge Large Language Models, the platform solves the bottleneck of content creation. Teachers can now instantly generate complex algorithmic simulations, providing students with an ever-expanding library of engaging, gamified Computer Science learning tools.</p>
+<hr>
+<h2>REFERENCES</h2>
+<ol>
+<li>React Documentation: <a href="https://react.dev/">https://react.dev/</a></li>
+<li>Node.js &amp; Express Documentation: <a href="https://expressjs.com/">https://expressjs.com/</a></li>
+<li>PostgreSQL Documentation: <a href="https://www.postgresql.org/">https://www.postgresql.org/</a></li>
+<li>Groq API Documentation: <a href="https://console.groq.com/docs/">https://console.groq.com/docs/</a></li>
+<li>Tailwind CSS: <a href="https://tailwindcss.com/">https://tailwindcss.com/</a></li>
+</ol>
+
+</body>
+</html>
