@@ -55,8 +55,10 @@ router.post('/google', async (req, res) => {
 
     res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role, avatar: user.avatar_url } });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Google Auth Verification Error' });
+    console.error('Google Auth Error:', err.message);
+    console.error('Full Error:', err);
+    console.error('Current CLIENT_ID:', CLIENT_ID);
+    res.status(500).json({ error: 'Google Auth Verification Error: ' + err.message });
   }
 });
 
