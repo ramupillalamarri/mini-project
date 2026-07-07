@@ -32,7 +32,7 @@ const LoginRegisterPage = () => {
             <BookOpen size={48} />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign In to LearnApp
+          Sign In to Learning Platform
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Join the learning platform today using your Google Account
@@ -61,31 +61,7 @@ const LoginRegisterPage = () => {
               size="large"
             />
           </div>
-          
-           <div className="mt-8 flex justify-center w-full border-t border-gray-100 pt-6 space-x-4">
-             <button 
-                type="button" 
-                onClick={() => navigate('/')} 
-                className="text-sm font-medium text-gray-500 hover:text-gray-700 hover:underline"
-             >
-                 Continue as Guest
-             </button>
-             <button 
-                type="button" 
-                onClick={async () => {
-                  try {
-                    const res = await axios.post('/api/auth/dev-login');
-                    login(res.data.token, res.data.user);
-                    navigate('/');
-                  } catch (e) {
-                    setError('Dev login failed');
-                  }
-                }}
-                className="text-sm font-medium text-brand-500 hover:text-brand-700 hover:underline"
-             >
-                 Dev Login (Agent)
-             </button>
-          </div>
+          {/* Guest and Dev logins removed for production */}
         </div>
       </div>
     </div>

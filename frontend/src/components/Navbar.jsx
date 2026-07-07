@@ -16,7 +16,7 @@ const Navbar = ({ toggleSidebar }) => {
           <Menu size={24} />
         </button>
         <div className="flex items-center lg:hidden">
-            <span className="text-xl font-bold text-brand-600 ml-2">LearnApp</span>
+            <span className="text-xl font-bold text-brand-600 ml-2">Learning Platform</span>
         </div>
       </div>
 

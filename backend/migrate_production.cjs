@@ -6,10 +6,8 @@ const path = require('path');
 const dbUrl = process.argv[2] || process.env.DATABASE_URL;
 
 if (!dbUrl) {
-  console.error('Error: Please provide your database URL connection string.');
-  console.log('\nUsage:');
-  console.log('  node migrate_production.cjs "postgres://user:password@host:port/dbname?sslmode=require"');
-  process.exit(1);
+  console.log('No DATABASE_URL found. Skipping production database migrations.');
+  process.exit(0);
 }
 
 async function run() {

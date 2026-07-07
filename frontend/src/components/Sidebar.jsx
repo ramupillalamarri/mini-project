@@ -26,7 +26,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       )}
     >
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-        {isOpen && <span className="text-xl font-bold text-brand-600 truncate fade-in">LearnApp</span>}
+        {isOpen && <span className="text-xl font-bold text-brand-600 truncate fade-in">Learning Platform</span>}
         <button 
           onClick={toggleSidebar}
           className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 hidden md:block transition-colors"
