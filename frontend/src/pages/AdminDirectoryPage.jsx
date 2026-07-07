@@ -3,8 +3,10 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContextValue';
 import { Link, Navigate } from 'react-router-dom';
 import { UserPlus, ChevronRight } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 const AdminDirectoryPage = () => {
+  const { showToast } = useToast();
   const { user } = useContext(AuthContext);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,9 +40,10 @@ const AdminDirectoryPage = () => {
       await axios.put('/api/auth/promote', { student_id: studentId });
       // Remove them from the students list visually
       setStudents(students.filter(s => s.id !== studentId));
+      showToast(`Successfully promoted ${studentName} to Teacher!`, 'success');
     } catch (err) {
       console.error(err);
-      alert('Failed to promote user.');
+      showToast('Failed to promote user.', 'error');
     }
   };
 

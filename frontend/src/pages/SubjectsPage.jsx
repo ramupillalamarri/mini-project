@@ -1,9 +1,11 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContextValue';
+import { useToast } from '../context/ToastContext';
 import { Book, ChevronDown, ChevronUp, Plus, FileText, ExternalLink, Video, Link as LinkIcon, Trash2, Edit } from 'lucide-react';
 
 const SubjectsPage = () => {
+  const { showToast } = useToast();
   const { user } = useContext(AuthContext);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -114,10 +116,10 @@ const SubjectsPage = () => {
         }
         return s;
       }));
-      alert('Resource deleted successfully!');
+      showToast('Resource deleted successfully!', 'success');
     } catch (error) {
       console.error("Error deleting resource", error);
-      alert(`Failed to delete resource: ${error.response?.data?.error || error.message}`);
+      showToast(`Failed to delete resource: ${error.response?.data?.error || error.message}`, 'error');
     }
   };
 
@@ -144,9 +146,10 @@ const SubjectsPage = () => {
       
       setShowEditResourceModal({ show: false, resource: null, subjectId: null, topicId: null });
       setEditResource({ title: '' });
+      showToast('Resource edited successfully!', 'success');
     } catch (error) {
       console.error("Error editing resource", error);
-      alert(`Failed to edit resource: ${error.response?.data?.error || error.message}`);
+      showToast(`Failed to edit resource: ${error.response?.data?.error || error.message}`, 'error');
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Award, Check, RotateCcw, Play, Pause, X, HelpCircle, ArrowRight } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 const LEVEL_DATA = [
   {
@@ -51,6 +52,7 @@ const LEVEL_DATA = [
 ];
 
 export default function FlexboxFrogHopperGame({ onGameComplete, autoStart = false }) {
+  const { showToast } = useToast();
   const [isPaused, setIsPaused] = useState(false);
   const [currentLevel, setCurrentLevel] = useState(0);
   const [styles, setStyles] = useState({ ...LEVEL_DATA[0].defaults });
@@ -82,7 +84,7 @@ export default function FlexboxFrogHopperGame({ onGameComplete, autoStart = fals
       setIsSuccess(true);
       setScore(prev => prev + 25);
     } else {
-      alert("Oops! The frog is not on the lilypad yet. Try again or check the hint!");
+      showToast("Oops! The frog is not on the lilypad yet. Try again or check the hint!", "warning");
     }
   };
 

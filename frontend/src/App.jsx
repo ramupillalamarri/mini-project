@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import Layout from './components/Layout';
 import SubjectsPage from './pages/SubjectsPage';
 import GamesPage from './pages/GamesPage';
@@ -13,7 +14,8 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
+        <ToastProvider>
+          <Routes>
           <Route path="/login" element={<LoginRegisterPage />} />
           <Route path="/" element={<Layout />}>
             <Route index element={<Navigate to="/subjects" replace />} />
@@ -25,6 +27,7 @@ function App() {
             <Route path="admin/students/:id" element={<StudentAnalysisPage />} />
           </Route>
         </Routes>
+        </ToastProvider>
       </AuthProvider>
     </Router>
   );

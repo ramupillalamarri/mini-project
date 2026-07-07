@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext, Suspense, useMemo, lazy } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContextValue';
+import { useToast } from '../context/ToastContext';
 import { Gamepad2, Award, Plus, Trash2, ChevronDown, ChevronUp, Book, Wand2, X } from 'lucide-react';
 
 const gameModules = import.meta.glob('../components/*.jsx');
@@ -197,6 +198,7 @@ const GAME_DETAILS = {
 };
 
 const GamesPage = () => {
+  const { showToast } = useToast();
   const { user } = useContext(AuthContext);
   const [subjects, setSubjects] = useState([]);
   const [games, setGames] = useState([]);
@@ -312,9 +314,10 @@ const GamesPage = () => {
           score: score,
           attempts: 1
         }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
-        alert('Score saved successfully!');
+        showToast('Score saved successfully!', 'success');
       } catch (e) {
         console.error(e);
+        showToast('Error saving score.', 'error');
       }
     }
     setActiveGame(null);
@@ -327,8 +330,10 @@ const GamesPage = () => {
       setGames([res.data, ...games]);
       setShowAddModal(false);
       setNewGame({ title: '', type: 'quiz', subject_id: '', topic_id: '' });
+      showToast('Game added successfully!', 'success');
     } catch (error) {
       console.error(error);
+      showToast('Error adding game.', 'error');
     }
   };
 
@@ -344,10 +349,10 @@ const GamesPage = () => {
       setAiGame({ 
         title: '', subject_id: null, topic_id: null, instructions: '', description: '' 
       });
-      alert(res.data.message + '\n\nThe game has been dynamically added to the list and is ready to play!');
+      showToast('Game generated successfully and added to the list!', 'success');
     } catch (error) {
       console.error(error);
-      alert('Error generating game. Check console for details.');
+      showToast('Error generating game with AI. Please try again.', 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -358,9 +363,10 @@ const GamesPage = () => {
     try {
       await axios.delete(`/api/games/${gameId}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
       setGames(prevGames => prevGames.filter(g => g.id !== gameId));
+      showToast('Game deleted successfully!', 'success');
     } catch (error) {
       console.error(error);
-      alert('Error deleting game: ' + (error.response?.data?.error || error.message));
+      showToast('Error deleting game: ' + (error.response?.data?.error || error.message), 'error');
     }
   };
 
