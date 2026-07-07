@@ -4,9 +4,11 @@ import { AuthContext } from '../context/AuthContextValue';
 import { Link, Navigate } from 'react-router-dom';
 import { UserPlus, ChevronRight } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 const AdminDirectoryPage = () => {
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const { user } = useContext(AuthContext);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,11 @@ const AdminDirectoryPage = () => {
   const handlePromote = async (e, studentId, studentName) => {
     e.preventDefault();
     e.stopPropagation(); // Prevents routing to student profile
-    if (!window.confirm(`Promote ${studentName} to Teacher role?`)) return;
+    const confirmed = await confirm(`Are you sure you want to promote ${studentName} to the Teacher role?`, {
+      title: 'Promote User',
+      isDanger: false
+    });
+    if (!confirmed) return;
 
     try {
       await axios.put('/api/auth/promote', { student_id: studentId });

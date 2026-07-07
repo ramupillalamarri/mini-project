@@ -2,10 +2,12 @@ import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContextValue';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { Book, ChevronDown, ChevronUp, Plus, FileText, ExternalLink, Video, Link as LinkIcon, Trash2, Edit } from 'lucide-react';
 
 const SubjectsPage = () => {
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const { user } = useContext(AuthContext);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,18 +74,28 @@ const SubjectsPage = () => {
 
   const handleDeleteSubject = async (subjectId) => {
     if (user?.role !== 'teacher') return;
-    if (!window.confirm('Are you sure you want to delete this subject? This will also delete all topics and resources.')) return;
+    const confirmed = await confirm('Are you sure you want to delete this subject? This will permanently delete all associated topics and learning resources.', {
+      title: 'Delete Subject',
+      isDanger: true
+    });
+    if (!confirmed) return;
     try {
       await axios.delete(`/api/subjects/${subjectId}`);
       setSubjects(subjects.filter(s => s.id !== subjectId));
+      showToast('Subject deleted successfully!', 'success');
     } catch (error) {
       console.error("Error deleting subject", error);
+      showToast('Error deleting subject.', 'error');
     }
   };
 
   const handleDeleteTopic = async (subjectId, topicId) => {
     if (user?.role !== 'teacher') return;
-    if (!window.confirm('Are you sure you want to delete this topic and all its resources?')) return;
+    const confirmed = await confirm('Are you sure you want to delete this topic and all its learning resources?', {
+      title: 'Delete Topic',
+      isDanger: true
+    });
+    if (!confirmed) return;
     try {
       await axios.delete(`/api/subjects/${subjectId}/topics/${topicId}`);
       setSubjects(subjects.map(s => {
@@ -92,14 +104,20 @@ const SubjectsPage = () => {
         }
         return s;
       }));
+      showToast('Topic deleted successfully!', 'success');
     } catch (error) {
       console.error("Error deleting topic", error);
+      showToast('Error deleting topic.', 'error');
     }
   };
 
   const handleDeleteResource = async (resourceId, subjectId, topicId) => {
     if (user?.role !== 'teacher') return;
-    if (!window.confirm('Are you sure you want to delete this resource?')) return;
+    const confirmed = await confirm('Are you sure you want to delete this learning resource?', {
+      title: 'Delete Resource',
+      isDanger: true
+    });
+    if (!confirmed) return;
     try {
       await axios.delete(`/api/subjects/resources/${resourceId}`);
       setSubjects(subjects.map(s => {

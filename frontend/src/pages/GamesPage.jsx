@@ -2,6 +2,7 @@ import { useState, useEffect, useContext, Suspense, useMemo, lazy } from 'react'
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContextValue';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { Gamepad2, Award, Plus, Trash2, ChevronDown, ChevronUp, Book, Wand2, X } from 'lucide-react';
 
 const gameModules = import.meta.glob('../components/*.jsx');
@@ -199,6 +200,7 @@ const GAME_DETAILS = {
 
 const GamesPage = () => {
   const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const { user } = useContext(AuthContext);
   const [subjects, setSubjects] = useState([]);
   const [games, setGames] = useState([]);
@@ -359,7 +361,11 @@ const GamesPage = () => {
   };
 
   const handleDeleteGame = async (gameId) => {
-    if (!window.confirm('Are you sure you want to delete this game?')) return;
+    const confirmed = await confirm('Are you sure you want to delete this game? This action cannot be undone.', {
+      title: 'Delete Game',
+      isDanger: true
+    });
+    if (!confirmed) return;
     try {
       await axios.delete(`/api/games/${gameId}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
       setGames(prevGames => prevGames.filter(g => g.id !== gameId));
