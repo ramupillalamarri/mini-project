@@ -75,7 +75,10 @@ CREATE TABLE IF NOT EXISTS games (
   subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE,
   topic_id INTEGER REFERENCES topics(id) ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL,
-  type VARCHAR(100)
+  type VARCHAR(100),
+  description TEXT,
+  content TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- User Game Scores
