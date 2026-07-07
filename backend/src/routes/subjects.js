@@ -177,7 +177,7 @@ router.post('/topics/:topicId/resources', authenticateToken, requireRole('teache
   if (!title) return res.status(400).json({ error: 'Title is required' });
   if (!req.file) return res.status(400).json({ error: 'File is required' });
 
-  const url = `http://localhost:5000/uploads/resources/${req.file.filename}`;
+  const url = `/uploads/resources/${req.file.filename}`;
 
   try {
     const fileExtension = path.extname(req.file.originalname).replace('.', '').toLowerCase();

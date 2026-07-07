@@ -199,7 +199,10 @@ const SubjectsPage = () => {
   };
 
   const handleOpenResource = async (resource) => {
-    window.open(resource.url, '_blank');
+    const finalUrl = resource.url.startsWith('http') 
+      ? resource.url.replace('http://localhost:5000', axios.defaults.baseURL)
+      : `${axios.defaults.baseURL}${resource.url}`;
+    window.open(finalUrl, '_blank');
     if (user) {
       try {
         await axios.post('/api/subjects/resources/progress', {
