@@ -26,6 +26,16 @@ async function run() {
     const sql = fs.readFileSync(sqlPath, 'utf8');
 
     console.log('Executing database migrations...');
+    
+    // Patch existing games table schema if it was created in previous deploys
+    try {
+      await client.query('ALTER TABLE games ADD COLUMN IF NOT EXISTS description TEXT');
+      await client.query('ALTER TABLE games ADD COLUMN IF NOT EXISTS content TEXT');
+      await client.query('ALTER TABLE games ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+      console.log('Games table schema patch applied successfully.');
+    } catch (patchErr) {
+      console.warn('Warning during schema patching:', patchErr.message);
+    }
     // We split statements by semicolon to run them safely
     // Note: This is a simple migration executor. We filter out empty commands.
     const statements = sql
