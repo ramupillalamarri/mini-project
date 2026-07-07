@@ -24,7 +24,7 @@ const ProfilePage = () => {
 
     const fetchProfile = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/auth/profile');
+        const res = await axios.get('/api/auth/profile');
         setProfile({
           ...res.data,
           phone_number: res.data.phone_number || '',
@@ -45,7 +45,7 @@ const ProfilePage = () => {
     setSaving(true);
     setSuccessMessage('');
     try {
-      await axios.put('http://localhost:5000/api/auth/profile', {
+      await axios.put('/api/auth/profile', {
         phone_number: profile.phone_number,
         address: profile.address
       });

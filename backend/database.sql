@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_url TEXT,
   phone_number VARCHAR(50),
   address TEXT,
-  role VARCHAR(50) DEFAULT 'student',
+  role VARCHAR(50) NOT NULL DEFAULT 'student' CHECK (role IN ('teacher', 'student')),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

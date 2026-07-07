@@ -18,7 +18,7 @@ const StudentAnalysisPage = () => {
 
     const loadStudentData = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/analytics/students/${id}`);
+        const response = await axios.get(`/api/analytics/students/${id}`);
         setData(response.data);
       } catch (error) {
         console.error(error);

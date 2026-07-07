@@ -22,14 +22,25 @@ const storage = multer.diskStorage({
   }
 });
 
+const allowedMimeTypes = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'text/plain'
+]);
+
 const upload = multer({ 
   storage: storage,
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') {
+    if (allowedMimeTypes.has(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only PDFs are allowed'));
+      cb(new Error('Unsupported file type'));
     }
   }
 });
@@ -158,7 +169,7 @@ router.delete('/:subjectId/topics/:topicId', authenticateToken, requireRole('tea
   }
 });
 
-// Create a resource under a topic (Handles PDF upload)
+// Create a resource under a topic (handles document/image uploads)
 router.post('/topics/:topicId/resources', authenticateToken, requireRole('teacher'), upload.single('file'), async (req, res) => {
   const { topicId } = req.params;
   const { title } = req.body;
@@ -169,9 +180,10 @@ router.post('/topics/:topicId/resources', authenticateToken, requireRole('teache
   const url = `http://localhost:5000/uploads/resources/${req.file.filename}`;
 
   try {
+    const fileExtension = path.extname(req.file.originalname).replace('.', '').toLowerCase();
     const result = await pool.query(
       'INSERT INTO learning_resources (topic_id, title, type, url) VALUES ($1, $2, $3, $4) RETURNING *',
-      [topicId, title, 'pdf', url]
+      [topicId, title, fileExtension || 'file', url]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

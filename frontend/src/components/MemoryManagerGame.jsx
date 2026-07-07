@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Server, Award, Minimize2, AlertCircle, X, CheckCircle, RotateCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const TOTAL_MEMORY = 256; // KB
 
@@ -20,17 +21,15 @@ const generateProcess = (id) => ({
   name: `P${id}`
 });
 
-const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First Fit' }) => {
-  const [gameState, setGameState] = useState('start'); // start, playing, paused, gameover
+const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First Fit', autoStart = false }) => {
+  const [gameState, setGameState] = useState(autoStart ? 'playing' : 'start'); // start, playing, paused, gameover
   const [score, setScore] = useState(0);
   
   // Memory layout: Array of { id, type: 'free'|'allocated', size, process }
   const [memory, setMemory] = useState([{ id: 'm0', type: 'free', size: TOTAL_MEMORY, process: null }]);
   
   // Falling process queue
-  const [processQueue, setProcessQueue] = useState([]);
   const [fallingProcess, setFallingProcess] = useState(null);
-  
   const [feedback, setFeedback] = useState(null);
   const [compactionCooldown, setCompactionCooldown] = useState(0);
   
@@ -46,8 +45,6 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
   };
 
   const getFragmentation = () => {
-    // External fragmentation: total free space if the max free block cannot satisfy a typical request
-    // We will just calculate total free space that is broken into pieces.
     const freeSegments = memory.filter(s => s.type === 'free');
     if (freeSegments.length <= 1) return 0;
     return freeSegments.reduce((acc, seg) => acc + seg.size, 0);
@@ -68,12 +65,17 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
     setFeedback(null);
   };
 
+  useEffect(() => {
+    if (autoStart) {
+      initGame();
+    }
+  }, []);
+
   // Main game loop (falling blocks)
   useEffect(() => {
     if (gameState === 'playing') {
       const speed = Math.max(1500 - (Math.floor(score / 200) * 200), 500); // gets faster
       dropTimerRef.current = setInterval(() => {
-        // Auto-allocate if user didn't act
         if (fallingProcess) {
            autoAllocate(fallingProcess);
         }
@@ -101,7 +103,6 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
   const freeProcess = (segmentId) => {
     setMemory(prev => {
       let newMem = prev.map(seg => seg.id === segmentId ? { ...seg, type: 'free', process: null } : seg);
-      // Merge adjacent free blocks
       newMem = mergeFreeBlocks(newMem);
       return newMem;
     });
@@ -130,15 +131,15 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
       return;
     }
 
-    if (algorithm === 'First Fit') { // First Fit
+    if (algorithm === 'First Fit') {
       targetIndex = freeSegments[0].idx;
-    } else if (algorithm === 'Best Fit') { // Best Fit
+    } else if (algorithm === 'Best Fit') {
       let best = freeSegments[0];
       for (const s of freeSegments) {
         if (s.size < best.size) best = s;
       }
       targetIndex = best.idx;
-    } else { // Worst Fit
+    } else {
       let worst = freeSegments[0];
       for (const s of freeSegments) {
         if (s.size > worst.size) worst = s;
@@ -153,13 +154,9 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
     const newMem = [...memory];
     const target = newMem[index];
     
-    // Check if player selected correct block based on level (if clicked manually)
-    // For autoAllocate, it's always correct.
-    
     if (target.size === process.size) {
       newMem[index] = { ...target, type: 'allocated', process };
     } else {
-      // Split
       newMem.splice(index, 1, 
         { id: Math.random().toString(), type: 'allocated', size: process.size, process },
         { id: Math.random().toString(), type: 'free', size: target.size - process.size, process: null }
@@ -170,16 +167,12 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
     setScore(s => s + 20);
     showFeedback('+20 Allocated', false);
     
-    // Check level progression
-    // Check level progression for speed
     if (score > 0 && score % 200 === 0) {
        showFeedback(`Speed Increased!`, false);
     }
 
-    // Schedule freeing the process after a while
     const processToRemove = process;
     setTimeout(() => {
-      // Find the segment and free it, if still running
       setMemory(currentMem => {
          const idx = currentMem.findIndex(s => s.type === 'allocated' && s.process?.id === processToRemove.id);
          if (idx !== -1) {
@@ -217,7 +210,7 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
     }
     
     setMemory(newMem);
-    setCompactionCooldown(30); // 30 seconds cooldown
+    setCompactionCooldown(30);
     setScore(s => s + 50);
     showFeedback('Memory Compacted!', false);
   };
@@ -225,17 +218,20 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
   const usedMemPercent = Math.round((getUsedMemory() / TOTAL_MEMORY) * 100);
 
   return (
-    <div className="relative flex flex-col bg-slate-50 min-h-[600px] rounded-3xl shadow-xl border border-slate-200 overflow-hidden select-none">
-      
+    <div className="relative flex flex-col bg-slate-950 min-h-[600px] rounded-3xl shadow-2xl border border-indigo-500/20 overflow-hidden select-none text-white">
+      {/* Decorative Gradients */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-sky-500/5 rounded-full blur-3xl -z-10" />
+
       {/* Top Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center z-10 shadow-sm">
+      <div className="bg-slate-900/60 backdrop-blur-md border-b border-indigo-500/10 px-8 py-4 flex justify-between items-center z-10 shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
+          <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20">
             <Server size={28} />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-800 tracking-tight">Memory Manager</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <h2 className="text-xl font-bold tracking-tight text-indigo-200">Memory Manager</h2>
+            <p className="text-xs font-bold text-indigo-400/70 uppercase tracking-wider">
               {getAlgorithmName()}
             </p>
           </div>
@@ -243,34 +239,39 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
         
         <div className="flex items-center gap-8">
           <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Memory</span>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className={`text-2xl font-black ${usedMemPercent > 80 ? 'text-rose-600' : 'text-indigo-600'}`}>
-                {usedMemPercent}%
-              </span>
-            </div>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Memory Use</span>
+            <span className={`text-2xl font-black ${usedMemPercent > 80 ? 'text-rose-500 animate-pulse' : 'text-indigo-400'}`}>
+              {usedMemPercent}%
+            </span>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Score</span>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <Award size={18} className="text-violet-500" />
-              <span className="text-2xl font-black text-violet-600">{score}</span>
+              <Award size={18} className="text-violet-400" />
+              <span className="text-2xl font-black text-violet-400">{score}</span>
             </div>
             {highScore > 0 && (
-              <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-0.5">High Score: {Math.max(highScore, score)}</span>
+              <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-0.5">High: {Math.max(highScore, score)}</span>
             )}
           </div>
-          <div className="flex items-center gap-2 border-l-2 border-slate-100 pl-6">
+          <div className="flex items-center gap-2 border-l border-slate-800 pl-6">
              <button
               onClick={() => setGameState(prev => prev === 'playing' ? 'paused' : 'playing')}
-              className="p-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl shadow-sm transition-all"
+              className="p-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-355 rounded-xl transition-all"
               disabled={gameState === 'start' || gameState === 'gameover'}
             >
               {gameState === 'playing' ? <Pause size={20} /> : <Play size={20} />}
             </button>
             <button
+              onClick={initGame}
+              className="p-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-355 rounded-xl transition-all"
+              title="Restart Game"
+            >
+              <RotateCcw size={20} />
+            </button>
+            <button
               onClick={() => onGameComplete(score)}
-              className="p-3 bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 text-slate-400 rounded-xl transition-colors"
+              className="p-3 bg-slate-900 border border-slate-800 hover:bg-rose-950/20 hover:text-rose-455 text-slate-400 rounded-xl transition-all"
               title="Exit Game"
             >
               <X size={20} />
@@ -279,74 +280,84 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
         </div>
       </div>
 
-      {/* Main Play Area */}
-      <div className="flex-1 flex bg-slate-100 relative overflow-hidden">
+      {/* Main Play Area (Responsive Grid) */}
+      <div className="flex-1 flex flex-col md:flex-row bg-slate-950/20 relative overflow-hidden">
         
-        {/* Left Side: RAM visualization */}
-        <div className="w-1/2 p-8 flex flex-col justify-end items-center relative border-r border-slate-200 bg-white shadow-[inset_-10px_0_20px_rgba(0,0,0,0.02)]">
-           <div className="w-full max-w-[200px] flex flex-col h-full bg-slate-200 rounded-lg overflow-hidden border-2 border-slate-300 shadow-inner relative">
+        {/* Left Column: RAM representation */}
+        <div className="w-full md:w-1/2 p-6 flex flex-col justify-between items-center border-b md:border-b-0 md:border-r border-indigo-500/10 bg-slate-950/40">
+           <div className="text-center mb-2 md:mb-4">
+             <h3 className="text-indigo-400 font-bold uppercase tracking-wider text-xs sm:text-sm">RAM MODULE</h3>
+             <p className="text-[10px] text-slate-500">256 KB Total Memory</p>
+           </div>
+           
+           <div className="w-full max-w-[220px] flex flex-col h-72 sm:h-96 bg-slate-950 border border-indigo-500/10 rounded-xl overflow-hidden shadow-2xl relative p-1.5 gap-1.5">
              {/* Render Memory Segments */}
              {memory.map((seg, idx) => (
                 <div 
                   key={seg.id}
                   onClick={() => handleManualAllocate(idx)}
-                  className={`w-full relative transition-all duration-300 flex items-center justify-center cursor-pointer hover:brightness-110 border-b border-slate-300 last:border-0`}
+                  className={`w-full relative transition-all duration-300 flex items-center justify-center cursor-pointer hover:brightness-125 rounded-lg border border-indigo-500/5`}
                   style={{ 
                     height: `${(seg.size / TOTAL_MEMORY) * 100}%`,
-                    background: seg.type === 'free' ? 'transparent' : seg.process.color
+                    background: seg.type === 'free' ? 'rgba(30, 41, 59, 0.2)' : seg.process.color
                   }}
                 >
                   {seg.type === 'free' ? (
-                     <span className="text-slate-400 font-medium text-xs opacity-50">{seg.size}KB Free</span>
+                     <span className="text-[10px] text-slate-500 font-bold font-mono tracking-wider">{seg.size}KB Free</span>
                   ) : (
-                     <div className="flex flex-col items-center text-white">
-                       <span className="font-bold text-sm shadow-sm">{seg.process.name}</span>
-                       <span className="text-[10px] opacity-80">{seg.size}KB</span>
+                     <div className="flex flex-col items-center text-white text-center leading-none">
+                       <span className="font-black text-xs sm:text-sm shadow-md">P{seg.process.id}</span>
+                       <span className="text-[9px] font-bold opacity-80 mt-0.5">{seg.size}KB</span>
                      </div>
                   )}
                 </div>
              ))}
            </div>
-           <div className="mt-4 flex gap-4 w-full max-w-[200px]">
+           
+           <div className="mt-4 w-full max-w-[220px]">
              <button
                 onClick={triggerCompaction}
                 disabled={compactionCooldown > 0 || gameState !== 'playing'}
-                className="flex-1 flex items-center justify-center gap-1 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 border border-indigo-500/20"
              >
                 <Minimize2 size={14} />
-                {compactionCooldown > 0 ? `Wait ${compactionCooldown}s` : 'Compact'}
+                {compactionCooldown > 0 ? `Compaction cooldown: ${compactionCooldown}s` : 'Compact Fragmentation'}
              </button>
            </div>
         </div>
 
-        {/* Right Side: Falling Process */}
-        <div className="w-1/2 p-8 flex flex-col items-center justify-start relative bg-slate-50/50">
+        {/* Right Column: Incoming Process */}
+        <div className="w-full md:w-1/2 p-6 flex flex-col items-center justify-between bg-slate-950/20">
            
-           <div className="text-center mb-8">
-             <h3 className="text-slate-500 font-bold uppercase tracking-widest text-sm mb-2">Incoming Process</h3>
-             <p className="text-slate-400 text-xs">Click a free slot in memory to allocate</p>
+           <div className="text-center">
+             <h3 className="text-indigo-400 font-bold uppercase tracking-wider text-xs sm:text-sm mb-1">Queue Pipeline</h3>
+             <p className="text-[10px] text-slate-500">Allocate the incoming thread to the correct memory block</p>
            </div>
 
-           {fallingProcess && gameState === 'playing' && (
-             <div 
-               className="w-32 rounded-lg shadow-xl border-2 border-white/20 flex flex-col items-center justify-center animate-bounce text-white transform transition-transform"
-               style={{ 
-                 background: fallingProcess.color,
-                 height: `${Math.max(60, (fallingProcess.size / TOTAL_MEMORY) * 400)}px` // scaled visual representation
-               }}
-             >
-               <span className="font-black text-xl">{fallingProcess.name}</span>
-               <span className="font-medium text-sm opacity-90">{fallingProcess.size}KB</span>
-             </div>
-           )}
+           <div className="flex-1 flex items-center justify-center my-6">
+             {fallingProcess && gameState === 'playing' ? (
+               <div 
+                 className="w-28 sm:w-32 rounded-xl shadow-2xl border border-white/20 flex flex-col items-center justify-center animate-bounce text-white transform transition-all p-4"
+                 style={{ 
+                   background: fallingProcess.color,
+                   height: `${Math.max(80, (fallingProcess.size / TOTAL_MEMORY) * 400)}px`
+                 }}
+               >
+                 <span className="font-black text-xl leading-none">{fallingProcess.name}</span>
+                 <span className="font-bold text-xs opacity-90 mt-1">{fallingProcess.size}KB</span>
+               </div>
+             ) : (
+               <div className="text-slate-600 text-xs sm:text-sm font-bold">No active processes</div>
+             )}
+           </div>
 
-           <div className="absolute bottom-8 right-8 left-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-             <div className="flex justify-between text-xs text-slate-500 font-medium mb-1">
-               <span>Fragmentation</span>
-               <span>{getFragmentation()}KB</span>
+           <div className="w-full max-w-[280px] bg-slate-900/60 p-4 rounded-xl border border-indigo-500/10">
+             <div className="flex justify-between text-xxs sm:text-xs text-slate-400 font-bold mb-1.5">
+               <span>External Fragmentation</span>
+               <span className="font-mono">{getFragmentation()}KB</span>
              </div>
-             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-               <div className="bg-rose-400 h-full transition-all" style={{width: `${Math.min(100, (getFragmentation() / TOTAL_MEMORY) * 100)}%`}}></div>
+             <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden p-0.5 border border-slate-800">
+               <div className="bg-rose-500 h-full rounded-full transition-all" style={{width: `${Math.min(100, (getFragmentation() / TOTAL_MEMORY) * 100)}%`}}></div>
              </div>
            </div>
 
@@ -356,38 +367,40 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
 
       {/* Start Screen Overlay */}
       {gameState === 'start' && (
-        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-3xl max-w-md w-full shadow-2xl text-center transform scale-100 animate-in fade-in zoom-in duration-300 relative">
+        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-indigo-500/20 p-8 rounded-3xl max-w-md w-full shadow-2xl text-center relative text-white">
             <button
               onClick={() => onGameComplete(score)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+              className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-350 hover:bg-slate-800 rounded-full transition-all"
             >
               <X size={24} />
             </button>
-            <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <Server size={40} className="text-indigo-600" />
+            <div className="w-20 h-20 bg-indigo-500/10 border border-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-400">
+              <Server size={40} />
             </div>
-            <h2 className="text-3xl font-black text-slate-800 mb-2">Memory Manager</h2>
-            <p className="text-slate-500 font-medium mb-8">Fit the incoming processes into RAM. Manage fragmentation and avoid overflow!</p>
+            <h2 className="text-3xl font-black tracking-tight text-slate-100 mb-2">Memory Manager</h2>
+            <p className="text-slate-400 font-medium text-sm mb-8 leading-relaxed">
+              Place the incoming memory threads into empty slots using the {algorithm} protocol rules!
+            </p>
             
-            <div className="space-y-3 mb-8 text-left bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="space-y-3 mb-8 text-left bg-slate-950/60 p-4 rounded-xl border border-indigo-950 text-xs text-slate-300 leading-relaxed">
               <div className="flex items-start gap-3">
-                <CheckCircle size={18} className="text-emerald-500 mt-0.5 shrink-0" />
-                <p className="text-sm text-slate-600">Click a free space in RAM to allocate the incoming process.</p>
+                <CheckCircle size={18} className="text-indigo-400 mt-0.5 shrink-0" />
+                <p>Click any free space segment in the RAM module to allocate.</p>
               </div>
               <div className="flex items-start gap-3">
-                <CheckCircle size={18} className="text-emerald-500 mt-0.5 shrink-0" />
-                <p className="text-sm text-slate-600">Algorithm active: <b>{algorithm}</b>.</p>
+                <CheckCircle size={18} className="text-indigo-400 mt-0.5 shrink-0" />
+                <p>Ensure allocation choices match the selected: <b>{algorithm}</b> algorithm rules.</p>
               </div>
               <div className="flex items-start gap-3">
-                <CheckCircle size={18} className="text-emerald-500 mt-0.5 shrink-0" />
-                <p className="text-sm text-slate-600">Use <b>Compaction</b> to merge free spaces, but it has a cooldown!</p>
+                <CheckCircle size={18} className="text-indigo-400 mt-0.5 shrink-0" />
+                <p>Use <b>Compact</b> to group memory segments when fragmentation starts to block allocation.</p>
               </div>
             </div>
 
             <button 
               onClick={initGame}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-[0_8px_0_rgb(67,56,202)] hover:shadow-[0_4px_0_rgb(67,56,202)] hover:translate-y-1 transition-all text-lg flex items-center justify-center gap-2"
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all text-lg flex items-center justify-center gap-2"
             >
               <Play size={24} />
               Start Allocation
@@ -398,30 +411,30 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
 
       {/* Game Over Screen Overlay */}
       {gameState === 'gameover' && (
-        <div className="absolute inset-0 bg-rose-900/90 backdrop-blur-md z-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-3xl max-w-md w-full shadow-2xl text-center transform scale-100 animate-in fade-in zoom-in duration-300">
-            <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <AlertCircle size={40} className="text-rose-600" />
+        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-rose-500/20 p-8 rounded-3xl max-w-md w-full shadow-2xl text-center">
+            <div className="w-20 h-20 bg-rose-500/10 border border-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-450">
+              <AlertCircle size={40} />
             </div>
-            <h2 className="text-3xl font-black text-slate-800 mb-2">Memory Overflow!</h2>
-            <p className="text-slate-500 font-medium mb-8">Not enough contiguous space for the process.</p>
+            <h2 className="text-3xl font-black text-slate-100 mb-2">Memory Overflow!</h2>
+            <p className="text-slate-400 font-medium mb-8 text-sm">Not enough contiguous RAM blocks to fit process thread allocation.</p>
             
-            <div className="bg-slate-50 rounded-xl p-6 mb-8 border border-slate-100">
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Final Score</p>
-              <p className="text-5xl font-black text-indigo-600">{score}</p>
+            <div className="bg-slate-950 border border-indigo-950 rounded-xl p-6 mb-8">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Final Score</p>
+              <p className="text-5xl font-black text-indigo-400">{score}</p>
             </div>
 
             <div className="flex gap-4">
               <button 
                 onClick={initGame}
-                className="flex-1 py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-[0_8px_0_rgb(15,23,42)] hover:shadow-[0_4px_0_rgb(15,23,42)] hover:translate-y-1 transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-4 bg-slate-800 hover:bg-slate-750 text-white font-bold rounded-xl transition-all border border-slate-750"
               >
                 <RotateCcw size={20} />
                 Try Again
               </button>
               <button 
                 onClick={() => onGameComplete(score)}
-                className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-[0_8px_0_rgb(67,56,202)] hover:shadow-[0_4px_0_rgb(67,56,202)] hover:translate-y-1 transition-all"
+                className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all"
               >
                 Finish
               </button>
@@ -432,7 +445,7 @@ const MemoryManagerGame = ({ onGameComplete, highScore = 0, algorithm = 'First F
 
       {/* Dynamic Feedback Toast */}
       {feedback && (
-        <div className={`absolute top-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full font-bold shadow-lg text-white z-40 animate-in fade-in slide-in-from-top-4 ${feedback.isError ? 'bg-rose-500' : 'bg-emerald-500'}`}>
+        <div className={`absolute top-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full font-bold shadow-lg text-white z-40 animate-fade-in ${feedback.isError ? 'bg-rose-600' : 'bg-emerald-600'}`}>
           {feedback.msg}
         </div>
       )}

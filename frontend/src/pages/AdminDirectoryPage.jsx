@@ -15,7 +15,7 @@ const AdminDirectoryPage = () => {
 
     const loadStudents = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/analytics/students');
+        const response = await axios.get('/api/analytics/students');
         setStudents(response.data);
       } catch (error) {
         console.error(error);
@@ -35,7 +35,7 @@ const AdminDirectoryPage = () => {
     if (!window.confirm(`Promote ${studentName} to Teacher role?`)) return;
 
     try {
-      await axios.put('http://localhost:5000/api/auth/promote', { student_id: studentId });
+      await axios.put('/api/auth/promote', { student_id: studentId });
       // Remove them from the students list visually
       setStudents(students.filter(s => s.id !== studentId));
     } catch (err) {

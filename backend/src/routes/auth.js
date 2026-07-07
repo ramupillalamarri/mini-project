@@ -5,18 +5,28 @@ const pool = require('../db');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
-// Fallback CLIENT ID for demo if env is missing
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '1234dummy-client.apps.googleusercontent.com';
-const client = new OAuth2Client(CLIENT_ID);
+const rawClientIds = process.env.GOOGLE_CLIENT_IDS
+  ? process.env.GOOGLE_CLIENT_IDS.split(',').map((id) => id.trim()).filter(Boolean)
+  : [];
+const configuredClientIds = [
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.FRONTEND_GOOGLE_CLIENT_ID,
+  ...rawClientIds,
+].filter(Boolean);
+const client = new OAuth2Client();
 
 router.post('/google', async (req, res) => {
   const { credential } = req.body;
   if (!credential) return res.status(400).json({ error: 'Google credential is required' });
 
   try {
+    if (configuredClientIds.length === 0) {
+      return res.status(500).json({ error: 'Google OAuth is not configured on server' });
+    }
+
     const ticket = await client.verifyIdToken({
       idToken: credential,
-      audience: CLIENT_ID,  
+      audience: configuredClientIds,
     });
     const payload = ticket.getPayload();
     const googleId = payload['sub'];
@@ -57,7 +67,7 @@ router.post('/google', async (req, res) => {
   } catch (err) {
     console.error('Google Auth Error:', err.message);
     console.error('Full Error:', err);
-    console.error('Current CLIENT_ID:', CLIENT_ID);
+    console.error('Configured GOOGLE_CLIENT_IDs:', configuredClientIds);
     res.status(500).json({ error: 'Google Auth Verification Error: ' + err.message });
   }
 });

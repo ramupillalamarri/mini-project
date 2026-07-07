@@ -28,7 +28,7 @@ const SubjectsPage = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/subjects');
+        const response = await axios.get('/api/subjects');
         setSubjects(response.data);
       } catch (error) {
         console.error("Error fetching subjects", error);
@@ -44,21 +44,10 @@ const SubjectsPage = () => {
     e.preventDefault();
     if (user?.role !== 'teacher') return;
     try {
-      const res = await axios.post('http://localhost:5000/api/subjects', newSubject);
+      const res = await axios.post('/api/subjects', newSubject);
       const newSubjectData = { ...res.data, topics: [] };
       setSubjects([...subjects, newSubjectData]);
-      
-      // Also create a game for this subject
-      try {
-        await axios.post('http://localhost:5000/api/games', {
-          title: newSubject.name,
-          type: 'quiz',
-          subject_id: res.data.id
-        });
-      } catch (gameError) {
-        console.error("Error creating game for subject", gameError);
-      }
-      
+
       setShowSubjectModal(false);
       setNewSubject({ name: '', description: '' });
     } catch (error) {
@@ -70,7 +59,7 @@ const SubjectsPage = () => {
     e.preventDefault();
     if (user?.role !== 'teacher') return;
     try {
-      const res = await axios.put(`http://localhost:5000/api/subjects/${showEditSubjectModal.subject.id}`, editSubject);
+      const res = await axios.put(`/api/subjects/${showEditSubjectModal.subject.id}`, editSubject);
       setSubjects(subjects.map(s => s.id === showEditSubjectModal.subject.id ? { ...s, ...res.data } : s));
       setShowEditSubjectModal({ show: false, subject: null });
       setEditSubject({ name: '', description: '' });
@@ -83,7 +72,7 @@ const SubjectsPage = () => {
     if (user?.role !== 'teacher') return;
     if (!window.confirm('Are you sure you want to delete this subject? This will also delete all topics and resources.')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/subjects/${subjectId}`);
+      await axios.delete(`/api/subjects/${subjectId}`);
       setSubjects(subjects.filter(s => s.id !== subjectId));
     } catch (error) {
       console.error("Error deleting subject", error);
@@ -94,7 +83,7 @@ const SubjectsPage = () => {
     if (user?.role !== 'teacher') return;
     if (!window.confirm('Are you sure you want to delete this topic and all its resources?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/subjects/${subjectId}/topics/${topicId}`);
+      await axios.delete(`/api/subjects/${subjectId}/topics/${topicId}`);
       setSubjects(subjects.map(s => {
         if (s.id === subjectId) {
           return { ...s, topics: s.topics.filter(t => t.id !== topicId) };
@@ -110,7 +99,7 @@ const SubjectsPage = () => {
     if (user?.role !== 'teacher') return;
     if (!window.confirm('Are you sure you want to delete this resource?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/subjects/resources/${resourceId}`);
+      await axios.delete(`/api/subjects/resources/${resourceId}`);
       setSubjects(subjects.map(s => {
         if (s.id === subjectId) {
           return {
@@ -136,7 +125,7 @@ const SubjectsPage = () => {
     e.preventDefault();
     if (user?.role !== 'teacher') return;
     try {
-      const res = await axios.put(`http://localhost:5000/api/subjects/resources/${showEditResourceModal.resource.id}`, { title: editResource.title });
+      const res = await axios.put(`/api/subjects/resources/${showEditResourceModal.resource.id}`, { title: editResource.title });
       
       setSubjects(subjects.map(s => {
         if (s.id === showEditResourceModal.subjectId) {
@@ -165,7 +154,7 @@ const SubjectsPage = () => {
     e.preventDefault();
     if (user?.role !== 'teacher') return;
     try {
-      const res = await axios.post(`http://localhost:5000/api/subjects/${showTopicModal.subjectId}/topics`, newTopic);
+      const res = await axios.post(`/api/subjects/${showTopicModal.subjectId}/topics`, newTopic);
       setSubjects(subjects.map(s => {
         if (s.id === showTopicModal.subjectId) {
           return { ...s, topics: [...s.topics, { ...res.data, resources: [] }] };
@@ -188,7 +177,7 @@ const SubjectsPage = () => {
     if (newResource.file) formData.append('file', newResource.file);
 
     try {
-      const res = await axios.post(`http://localhost:5000/api/subjects/topics/${showResourceModal.topicId}/resources`, formData, {
+      const res = await axios.post(`/api/subjects/topics/${showResourceModal.topicId}/resources`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
@@ -213,7 +202,7 @@ const SubjectsPage = () => {
     window.open(resource.url, '_blank');
     if (user) {
       try {
-        await axios.post('http://localhost:5000/api/subjects/resources/progress', {
+        await axios.post('/api/subjects/resources/progress', {
           resource_id: resource.id,
           time_spent_seconds: 60 
         });
@@ -483,15 +472,15 @@ const SubjectsPage = () => {
       {showResourceModal.show && user?.role === 'teacher' && (
         <div className="fixed inset-0 bg-gray-900/40 z-50 flex items-center justify-center p-4 fade-in">
           <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl pt-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Add Learning Resource (PDF)</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Add Learning Resource</h2>
             <form onSubmit={handleAddResource} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Resource Title</label>
                 <input required type="text" value={newResource.title} onChange={e => setNewResource({...newResource, title: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-brand-500" placeholder="E.g., Linked Lists Handout" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">PDF File</label>
-                <input required type="file" accept="application/pdf" onChange={e => setNewResource({...newResource, file: e.target.files[0]})} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 outline-none" />
+                <label className="block text-sm font-medium text-gray-700">File (PDF, DOC, DOCX, JPG, PNG, GIF, WEBP, TXT)</label>
+                <input required type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,image/gif,image/webp,text/plain" onChange={e => setNewResource({...newResource, file: e.target.files[0]})} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 outline-none" />
               </div>
               <div className="flex space-x-3 mt-6">
                 <button type="button" onClick={() => setShowResourceModal({show: false, topicId: null})} className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">Cancel</button>

@@ -4,6 +4,7 @@ const { authenticateToken, requireRole } = require('../middleware/auth');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { getQuizGameTemplate, getMemoryGameTemplate, getSortingGameTemplate } = require('../utils/gameTemplates');
 const router = express.Router();
 
 // Get all games
@@ -32,7 +33,9 @@ router.get('/subject/:subjectId', async (req, res) => {
 // Add a game (Teacher Only)
 router.post('/', authenticateToken, requireRole('teacher'), async (req, res) => {
   const { title, type, subject_id, topic_id } = req.body;
-  if (!title) return res.status(400).json({ error: 'Title required' });
+  if (!title || !subject_id || !topic_id) {
+    return res.status(400).json({ error: 'Subject, topic and game title are required' });
+  }
 
   try {
     const result = await pool.query(
@@ -62,9 +65,16 @@ router.post('/generate', authenticateToken, requireRole('teacher'), async (req, 
 Your task is to generate a complete, single-file React component based on the user's instructions.
 - The component MUST be a default export.
 - Use Tailwind CSS for styling.
-- You can use lucide-react for icons.
+- You can use lucide-react for icons. Import them from 'lucide-react'.
 - DO NOT use any other external libraries (unless standard React hooks).
 - The component must accept 'onGameComplete(score)' prop and call it when the game finishes to save the score.
+- The component MUST include a standardized header layout containing:
+  1. A left section with the game title and subtitle.
+  2. A right section with a score badge and a button group (Pause, Restart, Exit).
+     * Pause button: toggles an isPaused state and renders a backdrop-blur overlay blocking gameplay interactions.
+     * Restart button: re-initializes/resets the game state.
+     * Exit button: calls onGameComplete(score) directly.
+- The final level-clear or game-over state MUST display a results overlay displaying the score, a "Try Again" restart button, and a "Finish" exit button that calls onGameComplete(score).
 - Return ONLY the React code inside a single javascript or jsx markdown block. No other text, explanations, or wrapper.`;
 
   const userPrompt = `Create a React game component named "${componentName}".
@@ -122,8 +132,44 @@ ${description ? `Additional Description/Context: ${description}` : ''}`;
     });
 
   } catch (err) {
-    console.error('Error generating game:', err.response?.data || err.message);
-    res.status(500).json({ error: 'Failed to generate and save game' });
+    console.error('Groq generation failed, using local offline fallback generator:', err.response?.data || err.message);
+    
+    // Fallback Code Generation
+    let generatedCode;
+    const lowerTitle = title.toLowerCase();
+    const lowerInstructions = instructions.toLowerCase();
+    
+    if (lowerTitle.includes('sorting') || lowerInstructions.includes('sort') || lowerInstructions.includes('order')) {
+      generatedCode = getSortingGameTemplate(componentName, title, instructions);
+    } else if (lowerTitle.includes('match') || lowerTitle.includes('memory') || lowerInstructions.includes('pair')) {
+      generatedCode = getMemoryGameTemplate(componentName, title, instructions);
+    } else {
+      generatedCode = getQuizGameTemplate(componentName, title, instructions);
+    }
+
+    try {
+      const targetLocation = path.join(__dirname, '../../../frontend/src/components');
+      const filePath = path.join(targetLocation, `${componentName}.jsx`);
+      
+      if (!fs.existsSync(targetLocation)) {
+        fs.mkdirSync(targetLocation, { recursive: true });
+      }
+      
+      fs.writeFileSync(filePath, generatedCode, 'utf-8');
+
+      const result = await pool.query(
+        'INSERT INTO games (subject_id, topic_id, title, type) VALUES ($1, $2, $3, $4) RETURNING *',
+        [subject_id || null, topic_id || null, title, type || 'simulation']
+      );
+
+      res.status(201).json({ 
+        game: result.rows[0], 
+        message: `Game generated using local template (Offline Fallback) and saved successfully to ${filePath}` 
+      });
+    } catch (dbErr) {
+      console.error('Error in fallback path:', dbErr);
+      res.status(500).json({ error: 'Failed to generate game in fallback mode: ' + dbErr.message });
+    }
   }
 });
 

@@ -13,7 +13,7 @@ const LoginRegisterPage = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       const { credential } = credentialResponse;
-      const response = await axios.post('http://localhost:5000/api/auth/google', { credential });
+      const response = await axios.post('/api/auth/google', { credential });
       
       if (response.data.token) {
         login(response.data.token, response.data.user);
@@ -74,7 +74,7 @@ const LoginRegisterPage = () => {
                 type="button" 
                 onClick={async () => {
                   try {
-                    const res = await axios.post('http://localhost:5000/api/auth/dev-login');
+                    const res = await axios.post('/api/auth/dev-login');
                     login(res.data.token, res.data.user);
                     navigate('/');
                   } catch (e) {

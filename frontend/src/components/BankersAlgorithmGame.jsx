@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, AlertTriangle, CheckCircle, XCircle, Activity, Award, X, RotateCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
-  const [gameState, setGameState] = useState('start'); // start, playing, paused, gameover
+const BankersAlgorithmGame = ({ onGameComplete, highScore = 0, autoStart = false }) => {
+  const [gameState, setGameState] = useState(autoStart ? 'playing' : 'start'); // start, playing, paused, gameover
   const [level, setLevel] = useState(1);
   const [score, setScore] = useState(0);
   
-  // N=3, M=3 for level 1
   const initialResources = [10, 5, 7];
   const [available, setAvailable] = useState([...initialResources]);
   const [allocation, setAllocation] = useState([
@@ -15,9 +15,9 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
     [3, 0, 2]
   ]);
   const [maxNeed, setMaxNeed] = useState([
-    [7, 5, 3],
     [3, 2, 2],
-    [9, 0, 2]
+    [3, 2, 2],
+    [4, 0, 2]
   ]);
 
   const [currentRequest, setCurrentRequest] = useState(null);
@@ -33,11 +33,9 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
 
   const generateRequest = () => {
     const need = getNeedMatrix();
-    // Pick a random process that hasn't finished
     const unfinished = need.map((n, i) => ({ n, i })).filter(x => x.n.some(val => val > 0));
     
     if (unfinished.length === 0) {
-      // Level complete!
       handleLevelComplete();
       return;
     }
@@ -45,20 +43,18 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
     const pIndex = unfinished[Math.floor(Math.random() * unfinished.length)].i;
     const req = need[pIndex].map(n => Math.floor(Math.random() * (n + 1)));
     
-    // Ensure request is not all zeros
     if (req.every(v => v === 0)) {
       const idx = req.findIndex((v, j) => need[pIndex][j] > 0);
       if (idx !== -1) req[idx] = 1;
     }
 
-    // 20% chance to generate an unsafe request by exceeding available intentionally (for tricking)
     if (Math.random() < 0.2) {
       const j = Math.floor(Math.random() * req.length);
-      req[j] += available[j] + 1; // force unsafe/invalid
+      req[j] += available[j] + 1;
     }
 
     setCurrentRequest({ process: pIndex, request: req });
-    setTimeLeft(15 - Math.min(10, level)); // Gets faster
+    setTimeLeft(15 - Math.min(10, level));
   };
 
   const handleLevelComplete = () => {
@@ -66,7 +62,6 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
     showFeedback('Level Clear! Processes finished.', false);
     setLevel(l => l + 1);
     
-    // Reset with slightly harder matrices
     setAllocation([
       [0, 1, 0], [2, 0, 0], [3, 0, 2], [2, 1, 1]
     ]);
@@ -82,12 +77,18 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
     setLevel(1);
     setScore(0);
     setAllocation([ [0, 1, 0], [2, 0, 0], [3, 0, 2] ]);
-    setMaxNeed([ [7, 5, 3], [3, 2, 2], [9, 0, 2] ]);
+    setMaxNeed([ [3, 2, 2], [3, 2, 2], [4, 0, 2] ]);
     setAvailable([3, 3, 2]);
     setFeedback(null);
     setSafeSequence([]);
     setTimeout(generateRequest, 1000);
   };
+
+  useEffect(() => {
+    if (autoStart) {
+      initGame();
+    }
+  }, []);
 
   // Timer loop
   useEffect(() => {
@@ -146,7 +147,7 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
           }
         }
       }
-      if (!found) break; // unsafe
+      if (!found) break;
     }
     return { safe: count === alloc.length, seq };
   };
@@ -155,7 +156,6 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
     const { process, request } = currentRequest;
     const need = getNeedMatrix();
     
-    // Check basic validity
     let isValid = true;
     for (let j = 0; j < request.length; j++) {
       if (request[j] > need[process][j]) isValid = false;
@@ -177,7 +177,6 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
          return;
       }
 
-      // Simulate allocation
       let tempAlloc = allocation.map(row => [...row]);
       let tempAvail = [...available];
       let tempNeed = need.map(row => [...row]);
@@ -191,14 +190,12 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
       const { safe, seq } = isSafeState(tempAlloc, tempAvail, tempNeed);
 
       if (safe) {
-        // Safe allocation!
         setAllocation(tempAlloc);
         setAvailable(tempAvail);
         setSafeSequence(seq);
-        setScore(s => s + 30 + timeLeft); // Time bonus
+        setScore(s => s + 30 + timeLeft);
         showFeedback('Safe Allocation! +30', false);
         
-        // If process finished, release resources
         if (tempNeed[process].every(v => v === 0)) {
            for(let j=0; j<tempAvail.length; j++){
              tempAvail[j] += tempAlloc[process][j];
@@ -213,8 +210,6 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
         triggerGameOver("Deadlock Occurred! You approved an unsafe request.");
       }
     } else {
-      // Denied
-      // Was it actually safe to grant?
       let tempAlloc = allocation.map(row => [...row]);
       let tempAvail = [...available];
       let tempNeed = need.map(row => [...row]);
@@ -233,11 +228,9 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
       }
 
       if (safeToGrant && isValid) {
-         // Bad denial
          setScore(s => Math.max(0, s - 10));
          showFeedback('Denied a safe request. -10', true);
       } else {
-         // Good denial
          setScore(s => s + 20);
          showFeedback('Correct! Denied unsafe request. +20', false);
       }
@@ -253,51 +246,54 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
   };
 
   const renderRAG = () => {
-    // Simple SVG Graph visualization mapping allocation
     return (
-      <svg width="100%" height="200" className="bg-slate-50 rounded-xl border border-slate-200">
+      <svg viewBox="0 0 500 200" className="w-full h-auto max-h-[200px] bg-slate-950/80 rounded-xl border border-indigo-500/10 overflow-visible">
          <defs>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
+          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#475569" />
           </marker>
         </defs>
+        
         {/* Draw Resources (Squares) */}
         {available.map((r, i) => (
-          <g key={`r${i}`} transform={`translate(${100 + i * 120}, 40)`}>
-            <rect x="-20" y="-20" width="40" height="40" rx="8" fill="#e0e7ff" stroke="#6366f1" strokeWidth="2" />
-            <text x="0" y="5" textAnchor="middle" className="text-sm font-bold fill-indigo-700">R{i}</text>
-            <text x="0" y="35" textAnchor="middle" className="text-[10px] font-bold fill-slate-400">Av: {r}</text>
+          <g key={`r${i}`} transform={`translate(${100 + i * 140}, 40)`}>
+            <rect x="-20" y="-20" width="40" height="40" rx="8" fill="rgba(99,102,241,0.1)" stroke="#6366f1" strokeWidth="2.5" />
+            <text x="0" y="4" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#a5b4fc">R{i}</text>
+            <text x="0" y="32" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#64748b">Avail: {r}</text>
           </g>
         ))}
+        
         {/* Draw Processes (Circles) */}
         {allocation.map((p, i) => (
-          <g key={`p${i}`} transform={`translate(${60 + i * 100}, 150)`}>
-            <circle cx="0" cy="0" r="20" fill="#fce7f3" stroke="#ec4899" strokeWidth="2" />
-            <text x="0" y="5" textAnchor="middle" className="text-sm font-bold fill-pink-700">P{i}</text>
+          <g key={`p${i}`} transform={`translate(${60 + i * 110}, 145)`}>
+            <circle cx="0" cy="0" r="19" fill="rgba(236,72,153,0.1)" stroke="#ec4899" strokeWidth="2.5" />
+            <text x="0" y="4" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#fbcfe8">P{i}</text>
           </g>
         ))}
+        
         {/* Draw Edges (Allocation) */}
         {allocation.map((row, pIdx) => row.map((amount, rIdx) => {
            if (amount > 0) {
-             const rX = 100 + rIdx * 120;
-             const rY = 60; // bottom of rect
-             const pX = 60 + pIdx * 100;
-             const pY = 130; // top of circle
+             const rX = 100 + rIdx * 140;
+             const rY = 60;
+             const pX = 60 + pIdx * 110;
+             const pY = 125;
              return (
-               <path key={`edge-${pIdx}-${rIdx}`} d={`M ${rX} ${rY} L ${pX} ${pY}`} stroke="#94a3b8" strokeWidth="2" markerEnd="url(#arrowhead)" opacity="0.6" />
+               <path key={`edge-${pIdx}-${rIdx}`} d={`M ${rX} ${rY} L ${pX} ${pY}`} stroke="#475569" strokeWidth="2" markerEnd="url(#arrowhead)" opacity="0.6" />
              );
            }
            return null;
         }))}
+        
         {/* Draw Incoming Request Edge in Red if it exists */}
         {currentRequest && currentRequest.request.map((amount, rIdx) => {
           if (amount > 0) {
-             const pX = 60 + currentRequest.process * 100;
-             const pY = 130; 
-             const rX = 100 + rIdx * 120;
-             const rY = 60; 
+             const pX = 60 + currentRequest.process * 110;
+             const pY = 125;
+             const rX = 100 + rIdx * 140;
+             const rY = 60;
              return (
-               <path key={`req-${rIdx}`} d={`M ${pX} ${pY} L ${rX} ${rY}`} stroke="#ef4444" strokeWidth="2" strokeDasharray="5,5" markerEnd="url(#arrowhead)" opacity="0.8" className="animate-pulse" />
+               <path key={`req-${rIdx}`} d={`M ${pX} ${pY} L ${rX} ${rY}`} stroke="#ef4444" strokeWidth="2" strokeDasharray="4,4" markerEnd="url(#arrowhead)" opacity="0.85" className="animate-pulse" />
              );
           }
           return null;
@@ -309,17 +305,20 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
   const needMatrix = getNeedMatrix();
 
   return (
-    <div className="relative flex flex-col bg-slate-50 min-h-[600px] rounded-3xl shadow-xl border border-slate-200 overflow-hidden select-none">
-      
+    <div className="relative flex flex-col bg-slate-950 min-h-[600px] rounded-3xl shadow-2xl border border-indigo-500/20 overflow-hidden select-none text-white">
+      {/* Decorative Gradients */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl -z-10" />
+
       {/* Top Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center z-10 shadow-sm">
+      <div className="bg-slate-900/60 backdrop-blur-md border-b border-indigo-500/10 px-8 py-4 flex justify-between items-center z-10 shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-pink-100 text-pink-600 rounded-xl">
+          <div className="p-2 bg-pink-500/10 text-pink-400 rounded-xl border border-pink-500/20">
             <Activity size={28} />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-800 tracking-tight">Deadlock Escape</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <h2 className="text-xl font-bold tracking-tight text-pink-300">Deadlock Escape</h2>
+            <p className="text-xs font-bold text-pink-450/70 uppercase tracking-wider">
               Banker's Algorithm Simulator | Level {level}
             </p>
           </div>
@@ -327,26 +326,33 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
         
         <div className="flex items-center gap-8">
           <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Score</span>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <Award size={18} className="text-violet-500" />
-              <span className="text-2xl font-black text-violet-600">{score}</span>
+              <Award size={18} className="text-violet-400" />
+              <span className="text-2xl font-black text-violet-400">{score}</span>
             </div>
             {highScore > 0 && (
               <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-0.5">High Score: {Math.max(highScore, score)}</span>
             )}
           </div>
-          <div className="flex items-center gap-2 border-l-2 border-slate-100 pl-6">
+          <div className="flex items-center gap-2 border-l border-slate-800 pl-6">
              <button
               onClick={() => setGameState(prev => prev === 'playing' ? 'paused' : 'playing')}
-              className="p-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl shadow-sm transition-all"
+              className="p-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-350 rounded-xl transition-all"
               disabled={gameState === 'start' || gameState === 'gameover'}
             >
               {gameState === 'playing' ? <Pause size={20} /> : <Play size={20} />}
             </button>
             <button
+              onClick={initGame}
+              className="p-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-355 rounded-xl transition-all"
+              title="Restart Game"
+            >
+              <RotateCcw size={20} />
+            </button>
+            <button
               onClick={() => onGameComplete(score)}
-              className="p-3 bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 text-slate-400 rounded-xl transition-colors"
+              className="p-3 bg-slate-900 border border-slate-800 hover:bg-rose-950/20 hover:text-rose-455 text-slate-400 rounded-xl transition-all"
               title="Exit Game"
             >
               <X size={20} />
@@ -358,80 +364,80 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
       {/* Main Play Area */}
       <div className="flex-1 flex flex-col p-6 overflow-hidden">
          
-         <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="col-span-2">
-               <h3 className="text-sm font-bold text-slate-600 mb-2">Resource Allocation Graph</h3>
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="col-span-1 lg:col-span-2">
+               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Resource Allocation Graph</h3>
                {renderRAG()}
                {safeSequence.length > 0 && (
-                 <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 py-1.5 px-3 rounded-lg inline-block border border-emerald-100">
-                   Safe Sequence: {safeSequence.join(' → ')}
+                 <div className="mt-3 text-xs font-bold text-emerald-400 bg-emerald-950/40 py-2 px-4 rounded-xl border border-emerald-500/20">
+                   Safe Sequence Path: {safeSequence.join(' → ')}
                  </div>
                )}
             </div>
-            <div className="col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col relative overflow-hidden">
-               <h3 className="text-sm font-bold text-slate-600 mb-4 flex items-center gap-1">
+            <div className="col-span-1 bg-slate-900/60 rounded-xl shadow-2xl border border-indigo-500/10 p-5 flex flex-col relative overflow-hidden">
+               <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
                  <AlertTriangle size={16} className="text-amber-500"/> Incoming Request
                </h3>
                
                {currentRequest ? (
                  <div className="flex-1 flex flex-col">
-                    <div className="text-center mb-6">
-                      <div className="text-3xl font-black text-slate-800">P{currentRequest.process}</div>
-                      <div className="text-sm font-medium text-slate-500 mt-1">requests</div>
-                      <div className="text-lg font-bold text-indigo-600 tracking-widest bg-indigo-50 py-2 rounded-lg mt-2 border border-indigo-100">
+                    <div className="text-center mb-4">
+                      <div className="text-3xl font-black text-slate-205">Process P{currentRequest.process}</div>
+                      <div className="text-xs font-medium text-slate-500 mt-1">requests vector</div>
+                      <div className="text-lg font-bold text-indigo-400 tracking-widest bg-slate-950 py-2.5 rounded-lg mt-3 border border-indigo-500/15">
                         [{currentRequest.request.join(', ')}]
                       </div>
                     </div>
 
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-6">
+                    <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden mb-6 border border-slate-800 p-0.5">
                       <div className="bg-amber-400 h-full transition-all ease-linear duration-1000" style={{width: `${(timeLeft/15)*100}%`}}></div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 mt-auto">
+                    <div className="grid grid-cols-2 gap-3 mt-auto">
                       <button 
                         onClick={() => processDecision(false)}
-                        className="py-3 bg-white border-2 border-rose-100 hover:bg-rose-50 text-rose-600 font-bold rounded-xl transition-colors flex items-center justify-center gap-1"
+                        className="py-3 bg-slate-950 border border-slate-800 hover:bg-slate-800 text-rose-450 font-bold rounded-xl transition-all flex items-center justify-center gap-1"
                       >
                         <XCircle size={18}/> Deny
                       </button>
                       <button 
                         onClick={() => processDecision(true)}
-                        className="py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-md transition-colors flex items-center justify-center gap-1"
+                        className="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-1"
                       >
                         <CheckCircle size={18}/> Grant
                       </button>
                     </div>
                  </div>
                ) : (
-                 <div className="flex-1 flex items-center justify-center text-slate-400 text-sm font-medium">
-                   Waiting for requests...
+                 <div className="flex-1 flex items-center justify-center text-slate-650 text-xs font-bold animate-pulse">
+                   Generating next request...
                  </div>
                )}
             </div>
          </div>
 
          {/* Matrix Tables */}
-         <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <div className="grid grid-cols-4 gap-6 text-sm">
+         <div className="flex-1 bg-slate-900/40 rounded-xl border border-indigo-500/10 p-5 overflow-auto">
+            <div className="grid grid-cols-4 gap-4 text-xs min-w-[400px]">
                
                <div>
-                 <h4 className="font-bold text-slate-500 mb-2 border-b pb-1">Process</h4>
-                 {allocation.map((_, i) => <div key={i} className="py-1 font-bold text-slate-700">P{i}</div>)}
+                 <h4 className="font-bold text-slate-500 mb-2 border-b border-slate-800 pb-1.5 uppercase tracking-wider">Process</h4>
+                 {allocation.map((_, i) => <div key={i} className="py-1.5 font-bold text-slate-300">P{i}</div>)}
                </div>
                
                <div>
-                 <h4 className="font-bold text-slate-500 mb-2 border-b pb-1">Allocation</h4>
-                 {allocation.map((row, i) => <div key={i} className="py-1 font-medium text-slate-600">[{row.join(', ')}]</div>)}
+                 <h4 className="font-bold text-slate-500 mb-2 border-b border-slate-800 pb-1.5 uppercase tracking-wider">Allocation</h4>
+                 {allocation.map((row, i) => <div key={i} className="py-1.5 font-mono text-slate-400">[{row.join(', ')}]</div>)}
                </div>
 
                <div>
-                 <h4 className="font-bold text-slate-500 mb-2 border-b pb-1">Max Need</h4>
-                 {maxNeed.map((row, i) => <div key={i} className="py-1 font-medium text-slate-600">[{row.join(', ')}]</div>)}
+                 <h4 className="font-bold text-slate-500 mb-2 border-b border-slate-800 pb-1.5 uppercase tracking-wider">Max Need</h4>
+                 {maxNeed.map((row, i) => <div key={i} className="py-1.5 font-mono text-slate-400">[{row.join(', ')}]</div>)}
                </div>
 
                <div>
-                 <h4 className="font-bold text-slate-500 mb-2 border-b pb-1">Need (Max-Alloc)</h4>
-                 {needMatrix.map((row, i) => <div key={i} className="py-1 font-bold text-indigo-600">[{row.join(', ')}]</div>)}
+                 <h4 className="font-bold text-slate-500 mb-2 border-b border-slate-800 pb-1.5 uppercase tracking-wider">Need (Max-Alloc)</h4>
+                 {needMatrix.map((row, i) => <div key={i} className="py-1.5 font-mono font-bold text-indigo-400">[{row.join(', ')}]</div>)}
                </div>
 
             </div>
@@ -441,38 +447,40 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
 
       {/* Start Screen Overlay */}
       {gameState === 'start' && (
-        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-3xl max-w-md w-full shadow-2xl text-center relative">
+        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-indigo-500/20 p-8 rounded-3xl max-w-md w-full shadow-2xl text-center relative text-white">
             <button
               onClick={() => onGameComplete(score)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+              className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-350 hover:bg-slate-800 rounded-full transition-all"
             >
               <X size={24} />
             </button>
-            <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <Activity size={40} className="text-pink-600" />
+            <div className="w-20 h-20 bg-pink-500/10 border border-pink-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-pink-400">
+              <Activity size={40} />
             </div>
-            <h2 className="text-3xl font-black text-slate-800 mb-2">Deadlock Escape</h2>
-            <p className="text-slate-500 font-medium mb-8">Act as the OS Resource Manager. Avoid Deadlock using the Banker's Algorithm!</p>
+            <h2 className="text-3xl font-black tracking-tight text-slate-100 mb-2">Deadlock Escape</h2>
+            <p className="text-slate-400 font-medium text-sm mb-8 leading-relaxed">
+              Act as the OS Kernel Resource Manager. Prevent Deadlock states using the Banker's Algorithm safety check!
+            </p>
             
-            <div className="space-y-3 mb-8 text-left bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="space-y-3 mb-8 text-left bg-slate-950/60 p-4 rounded-xl border border-indigo-950 text-xs text-slate-300 leading-relaxed">
               <div className="flex items-start gap-3">
-                <CheckCircle size={18} className="text-emerald-500 mt-0.5 shrink-0" />
-                <p className="text-sm text-slate-600">Review the incoming Resource Request.</p>
+                <CheckCircle size={18} className="text-pink-400 mt-0.5 shrink-0" />
+                <p>Analyze incoming thread request vectors.</p>
               </div>
               <div className="flex items-start gap-3">
-                <CheckCircle size={18} className="text-emerald-500 mt-0.5 shrink-0" />
-                <p className="text-sm text-slate-600">Check if granting it leaves the system in a <b>Safe State</b> (Banker's Algorithm).</p>
+                <CheckCircle size={18} className="text-pink-400 mt-0.5 shrink-0" />
+                <p>Ensure that allocating resources leaves the system in a <b>Safe State</b> (i.e. at least one sequence path completes).</p>
               </div>
               <div className="flex items-start gap-3">
-                <CheckCircle size={18} className="text-emerald-500 mt-0.5 shrink-0" />
-                <p className="text-sm text-slate-600">Grant safe requests, Deny unsafe requests to score points.</p>
+                <CheckCircle size={18} className="text-pink-400 mt-0.5 shrink-0" />
+                <p>Grant only safe requests; deny deadlock-prone requests to score points.</p>
               </div>
             </div>
 
             <button 
               onClick={initGame}
-              className="w-full py-4 bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-xl shadow-[0_8px_0_rgb(190,24,93)] hover:shadow-[0_4px_0_rgb(190,24,93)] hover:translate-y-1 transition-all text-lg flex items-center justify-center gap-2"
+              className="w-full py-4 bg-pink-605 bg-indigo-650 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all text-lg flex items-center justify-center gap-2"
             >
               <Play size={24} />
               Start Simulator
@@ -483,30 +491,30 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
 
       {/* Game Over Screen Overlay */}
       {gameState === 'gameover' && (
-        <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-3xl max-w-md w-full shadow-2xl text-center">
-            <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <AlertTriangle size={40} className="text-rose-600" />
+        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-rose-500/20 p-8 rounded-3xl max-w-md w-full shadow-2xl text-center">
+            <div className="w-20 h-20 bg-rose-500/10 border border-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-450 animate-pulse">
+              <AlertTriangle size={40} />
             </div>
-            <h2 className="text-3xl font-black text-slate-800 mb-2">Game Over!</h2>
-            <p className="text-slate-500 font-medium mb-8 text-sm">{feedback?.msg || 'Deadlock occurred.'}</p>
+            <h2 className="text-3xl font-black text-slate-100 mb-2">System Deadlocked!</h2>
+            <p className="text-slate-400 font-medium mb-8 text-sm">{feedback?.msg || 'Deadlock state occurred.'}</p>
             
-            <div className="bg-slate-50 rounded-xl p-6 mb-8 border border-slate-100">
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Final Score</p>
-              <p className="text-5xl font-black text-pink-600">{score}</p>
+            <div className="bg-slate-950 border border-indigo-950 rounded-xl p-6 mb-8">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Final Score</p>
+              <p className="text-5xl font-black text-indigo-400">{score}</p>
             </div>
 
             <div className="flex gap-4">
               <button 
                 onClick={initGame}
-                className="flex-1 py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-[0_8px_0_rgb(15,23,42)] hover:shadow-[0_4px_0_rgb(15,23,42)] hover:translate-y-1 transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-4 bg-slate-800 hover:bg-slate-750 text-white font-bold rounded-xl transition-all border border-slate-750"
               >
                 <RotateCcw size={20} />
                 Try Again
               </button>
               <button 
                 onClick={() => onGameComplete(score)}
-                className="flex-1 py-4 bg-pink-600 hover:bg-pink-700 text-white font-bold rounded-xl shadow-[0_8px_0_rgb(190,24,93)] hover:shadow-[0_4px_0_rgb(190,24,93)] hover:translate-y-1 transition-all"
+                className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all"
               >
                 Finish
               </button>
@@ -517,7 +525,7 @@ const BankersAlgorithmGame = ({ onGameComplete, highScore = 0 }) => {
 
       {/* Dynamic Feedback Toast */}
       {feedback && gameState === 'playing' && (
-        <div className={`absolute top-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full font-bold shadow-lg text-white z-40 animate-in fade-in slide-in-from-top-4 ${feedback.isError ? 'bg-rose-500' : 'bg-emerald-500'}`}>
+        <div className={`absolute top-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full font-bold shadow-lg text-white z-40 animate-fade-in ${feedback.isError ? 'bg-rose-600' : 'bg-emerald-600'}`}>
           {feedback.msg}
         </div>
       )}
