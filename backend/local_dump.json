@@ -1,0 +1,400 @@
+{
+  "subjects": [
+    {
+      "id": 1,
+      "name": "Operating Systems",
+      "description": "Study of operating system concepts, processes, memory management, and file systems.",
+      "created_at": "2026-04-27T10:28:19.175Z"
+    },
+    {
+      "id": 3,
+      "name": "Computer networks",
+      "description": "cn\n",
+      "created_at": "2026-04-27T10:59:19.385Z"
+    },
+    {
+      "id": 5,
+      "name": "Data Structures",
+      "description": "",
+      "created_at": "2026-04-28T04:55:47.850Z"
+    },
+    {
+      "id": 9,
+      "name": "web development",
+      "description": "",
+      "created_at": "2026-05-01T06:29:43.542Z"
+    }
+  ],
+  "topics": [
+    {
+      "id": 2,
+      "subject_id": 1,
+      "name": "Scheduling in Operating systems",
+      "description": "",
+      "created_at": "2026-04-27T11:23:05.230Z"
+    },
+    {
+      "id": 4,
+      "subject_id": 1,
+      "name": "Memory Management",
+      "description": "",
+      "created_at": "2026-04-27T17:19:06.072Z"
+    },
+    {
+      "id": 5,
+      "subject_id": 1,
+      "name": "Deadlock",
+      "description": "",
+      "created_at": "2026-04-27T17:23:27.374Z"
+    },
+    {
+      "id": 7,
+      "subject_id": 3,
+      "name": "Error control",
+      "description": "",
+      "created_at": "2026-04-27T17:28:38.338Z"
+    },
+    {
+      "id": 8,
+      "subject_id": 3,
+      "name": "Transport layer",
+      "description": "",
+      "created_at": "2026-04-27T17:29:42.952Z"
+    },
+    {
+      "id": 10,
+      "subject_id": 3,
+      "name": "IP Addressing & Routing",
+      "description": "Understand IP, Subnets, and Routing Algorithms",
+      "created_at": "2026-04-27T20:14:36.903Z"
+    },
+    {
+      "id": 12,
+      "subject_id": 5,
+      "name": "Sorting",
+      "description": "",
+      "created_at": "2026-04-28T06:41:18.120Z"
+    },
+    {
+      "id": 13,
+      "subject_id": 5,
+      "name": "Stacks and Queues",
+      "description": "",
+      "created_at": "2026-04-28T10:30:16.501Z"
+    },
+    {
+      "id": 14,
+      "subject_id": 5,
+      "name": "Binary Trees",
+      "description": "",
+      "created_at": "2026-04-28T10:31:00.598Z"
+    },
+    {
+      "id": 16,
+      "subject_id": 9,
+      "name": "html",
+      "description": "",
+      "created_at": "2026-05-01T06:29:54.136Z"
+    },
+    {
+      "id": 18,
+      "subject_id": 9,
+      "name": "CSS",
+      "description": "",
+      "created_at": "2026-07-06T18:21:34.099Z"
+    },
+    {
+      "id": 19,
+      "subject_id": 9,
+      "name": "JavaScript",
+      "description": "",
+      "created_at": "2026-07-06T18:24:00.330Z"
+    }
+  ],
+  "resources": [
+    {
+      "id": 4,
+      "topic_id": 2,
+      "title": "OS-Scheduling ",
+      "type": "pdf",
+      "url": "http://localhost:5000/uploads/resources/1777291496538-881036356.pdf",
+      "created_at": "2026-04-27T12:04:56.625Z"
+    },
+    {
+      "id": 6,
+      "topic_id": 4,
+      "title": "Memory management",
+      "type": "pdf",
+      "url": "http://localhost:5000/uploads/resources/1777310360253-432100706.pdf",
+      "created_at": "2026-04-27T17:19:20.320Z"
+    },
+    {
+      "id": 7,
+      "topic_id": 5,
+      "title": "Deadlock",
+      "type": "pdf",
+      "url": "http://localhost:5000/uploads/resources/1777310623750-851477889.pdf",
+      "created_at": "2026-04-27T17:23:43.815Z"
+    },
+    {
+      "id": 9,
+      "topic_id": 7,
+      "title": "Error_control",
+      "type": "pdf",
+      "url": "http://localhost:5000/uploads/resources/1777310939449-886917632.pdf",
+      "created_at": "2026-04-27T17:28:59.558Z"
+    },
+    {
+      "id": 10,
+      "topic_id": 8,
+      "title": "Transport_layer",
+      "type": "pdf",
+      "url": "http://localhost:5000/uploads/resources/1777310995752-660898108.pdf",
+      "created_at": "2026-04-27T17:29:55.865Z"
+    },
+    {
+      "id": 11,
+      "topic_id": 10,
+      "title": "ip addressing_routing",
+      "type": "pdf",
+      "url": "http://localhost:5000/uploads/resources/1777321006906-292571606.pdf",
+      "created_at": "2026-04-27T20:16:46.978Z"
+    },
+    {
+      "id": 14,
+      "topic_id": 13,
+      "title": "Stack and Queues",
+      "type": "pdf",
+      "url": "http://localhost:5000/uploads/resources/1777372239295-381314243.pdf",
+      "created_at": "2026-04-28T10:30:39.388Z"
+    },
+    {
+      "id": 15,
+      "topic_id": 14,
+      "title": "Binary Trees",
+      "type": "pdf",
+      "url": "http://localhost:5000/uploads/resources/1777372272733-93349874.pdf",
+      "created_at": "2026-04-28T10:31:12.816Z"
+    },
+    {
+      "id": 17,
+      "topic_id": 12,
+      "title": "Sorting",
+      "type": "pdf",
+      "url": "http://localhost:5000/uploads/resources/1777373064884-474540765.pdf",
+      "created_at": "2026-04-28T10:44:24.988Z"
+    }
+  ],
+  "games": [
+    {
+      "id": "0f3c00eb-3457-456d-8c73-cfd5e9cd344a",
+      "title": "Page Frame Architect (Page Replacement)",
+      "type": "simulation",
+      "subject_id": 1,
+      "created_at": "2026-07-07T09:21:47.202Z",
+      "topic_id": 4,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "121e76a8-9125-4cf1-b362-30e35040a1e1",
+      "title": "Stack & Queue Cargo Loader",
+      "type": "simulation",
+      "subject_id": 5,
+      "created_at": "2026-07-07T10:34:34.595Z",
+      "topic_id": 13,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "2480153c-1c6e-493e-8d00-2b8886b6efab",
+      "title": "Memory Manager: First Fit",
+      "type": "simulation",
+      "subject_id": 1,
+      "created_at": "2026-04-27T19:31:19.314Z",
+      "topic_id": 4,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "27fca4d0-0513-4dd6-a807-c4c5af151f76",
+      "title": "Memory Manager: Worst Fit",
+      "type": "simulation",
+      "subject_id": 1,
+      "created_at": "2026-04-27T19:31:19.332Z",
+      "topic_id": 4,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "304ba0f9-b542-4f2b-bcb9-7cb884c5b3c9",
+      "title": "Deadlock Escape: Banker's Algorithm",
+      "type": "simulation",
+      "subject_id": 1,
+      "created_at": "2026-04-27T19:21:20.053Z",
+      "topic_id": 5,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "3bc8f837-8855-4a92-a471-a43c3e631249",
+      "title": "Binary Tree Balance Beam",
+      "type": "simulation",
+      "subject_id": 5,
+      "created_at": "2026-07-07T12:33:15.414Z",
+      "topic_id": 14,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "4c0d290b-cc5c-4a94-9caa-f93a65b0ad6a",
+      "title": "FCFS Scheduler",
+      "type": "simulation",
+      "subject_id": 1,
+      "created_at": "2026-04-27T17:16:59.763Z",
+      "topic_id": 2,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "72cdd1fa-d69d-42ee-8253-b42497a892d8",
+      "title": "Priority Dispatcher (Priority CPU Scheduling)",
+      "type": "simulation",
+      "subject_id": 1,
+      "created_at": "2026-07-07T09:21:47.169Z",
+      "topic_id": 2,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "73c0db91-bfdd-47f7-a72e-fec49b99b233",
+      "title": "SJF Scheduler",
+      "type": "simulation",
+      "subject_id": 1,
+      "created_at": "2026-04-27T17:16:59.776Z",
+      "topic_id": 2,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "75e94159-509b-4d1b-b16b-4bf1e731fc22",
+      "title": "Sorting Master",
+      "type": "simulation",
+      "subject_id": 5,
+      "created_at": "2026-04-29T05:47:08.700Z",
+      "topic_id": 12,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "87a4b493-4790-49d1-a94d-50f10317620a",
+      "title": "The Interactive Plate Table (CSS Selectors)",
+      "type": "quiz",
+      "subject_id": 9,
+      "created_at": "2026-07-06T18:28:05.188Z",
+      "topic_id": 18,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "94395faf-9494-4038-bcd8-4730b4b12550",
+      "title": "Protocol Race: TCP vs UDP Showdown",
+      "type": "simulation",
+      "subject_id": 3,
+      "created_at": "2026-04-27T20:07:24.759Z",
+      "topic_id": 8,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "a4c65ffb-e7da-426a-a789-f54cf032d33c",
+      "title": "Dining Philosophers Manager (Concurrency)",
+      "type": "simulation",
+      "subject_id": 1,
+      "created_at": "2026-07-07T09:21:47.208Z",
+      "topic_id": 5,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "acbde4a9-5239-444a-906c-296d719718d6",
+      "title": "Asynchronous Pipeline (JavaScript Execution)",
+      "type": "logic",
+      "subject_id": 9,
+      "created_at": "2026-07-06T18:28:05.246Z",
+      "topic_id": 19,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "c07d18d5-b406-418c-a56c-0e4bba2563a0",
+      "title": "Packet Navigator: Routing & IP Challenge",
+      "type": "simulation",
+      "subject_id": 3,
+      "created_at": "2026-04-27T20:14:36.914Z",
+      "topic_id": 10,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "c5384707-3cb5-4cd6-8ba7-8e3e722b7f3f",
+      "title": "DOM Node Explorer (HTML Structure)",
+      "type": "quiz",
+      "subject_id": 9,
+      "created_at": "2026-07-06T18:28:05.240Z",
+      "topic_id": 16,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "dd221c18-5c7d-40d9-b248-3410508d9065",
+      "title": "Flexbox Frog Hopper (CSS Layouts)",
+      "type": "simulation",
+      "subject_id": 9,
+      "created_at": "2026-07-06T18:28:05.232Z",
+      "topic_id": 18,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "e350b170-25f8-4390-ba65-059c603d33b5",
+      "title": "Tree Climber",
+      "type": "simulation",
+      "subject_id": 5,
+      "created_at": "2026-04-29T05:35:49.489Z",
+      "topic_id": 14,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "eeccfe32-45b5-413f-863b-ebafd508e469",
+      "title": "Memory Manager: Best Fit",
+      "type": "simulation",
+      "subject_id": 1,
+      "created_at": "2026-04-27T19:31:19.325Z",
+      "topic_id": 4,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "f4d7b5d1-b8e9-4bea-bb33-69ebcbb2e49a",
+      "title": "ARQ Battle: Reliable Data Transmission Simulator",
+      "type": "simulation",
+      "subject_id": 3,
+      "created_at": "2026-04-27T20:07:24.753Z",
+      "topic_id": 7,
+      "description": null,
+      "content": null
+    },
+    {
+      "id": "fb83b188-0b22-4899-8abf-f99688c5d254",
+      "title": "Round Robin Scheduler",
+      "type": "simulation",
+      "subject_id": 1,
+      "created_at": "2026-04-27T17:16:59.780Z",
+      "topic_id": 2,
+      "description": null,
+      "content": null
+    }
+  ]
+}

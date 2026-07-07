@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node migrate_production.cjs && node index.js",
+    "start": "node migrate_production.cjs && node seed_production_db.cjs && node index.js",
     "dev": "nodemon index.js"
   },
   "keywords": [],
