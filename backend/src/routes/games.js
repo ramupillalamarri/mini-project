@@ -173,6 +173,55 @@ ${description ? `Additional Description/Context: ${description}` : ''}`;
   }
 });
 
+// Generate dynamic questions for offline/production AI games
+router.post('/generate-questions', async (req, res) => {
+  const { title, instructions, description } = req.body;
+  const groqApiKey = process.env.GROQ_API_KEY;
+
+  if (!groqApiKey) {
+    return res.json([
+      { question: `What is the primary goal of ${title}?`, options: [instructions, 'To do nothing', 'To fail the system', 'To browse the web'], answer: 0 }
+    ]);
+  }
+
+  try {
+    const prompt = `You are a curriculum assistant. Generate 5 multiple-choice questions for an interactive educational game.
+Game Title: ${title}
+Instructions: ${instructions}
+Description: ${description}
+
+Return ONLY a valid JSON array of objects. Do not include any explanations, introduction, markdown blocks, or text.
+Each object must have:
+- "question" (string): The quiz question.
+- "options" (array of 4 strings): Multiple choice options.
+- "answer" (number): Index of the correct option (0-3).`;
+
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.5,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    let content = response.data.choices[0].message.content.trim();
+    const match = content.match(/```(?:json)?\n([\s\S]*?)\n```/);
+    if (match) content = match[1];
+
+    res.json(JSON.parse(content));
+  } catch (err) {
+    console.error('Failed to generate dynamic questions:', err.message);
+    res.status(500).json({ error: 'Failed to generate questions' });
+  }
+});
+
 // Delete a game (Teacher Only)
 router.delete('/:id', authenticateToken, requireRole('teacher'), async (req, res) => {
   try {

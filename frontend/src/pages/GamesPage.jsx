@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContextValue';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
+import DynamicQuizGameRunner from '../components/DynamicQuizGameRunner';
 import { Gamepad2, Award, Plus, Trash2, ChevronDown, ChevronUp, Book, Wand2, X } from 'lucide-react';
 
 const gameModules = import.meta.glob('../components/*.jsx');
@@ -552,6 +553,12 @@ const GamesPage = () => {
             highScore={userScores.filter(s => s.title === activeGame.title).reduce((max, s) => Math.max(max, s.score), 0)}
           />
         </Suspense>
+      ) : activeGame ? (
+        <DynamicQuizGameRunner 
+          game={activeGame}
+          onGameComplete={handleGameComplete}
+          highScore={userScores.filter(s => s.title === activeGame.title).reduce((max, s) => Math.max(max, s.score), 0)}
+        />
       ) : (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
