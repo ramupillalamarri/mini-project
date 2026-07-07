@@ -393,13 +393,6 @@ const GamesPage = () => {
                   <Wand2 size={18} className="mr-2" />
                   AI Create Game
                 </button>
-                <button 
-                  onClick={() => setShowAddModal(true)}
-                  className="flex items-center px-4 py-2.5 bg-brand-600 text-white font-semibold rounded-xl hover:bg-brand-700 hover:shadow-lg transition-all"
-                >
-                  <Plus size={18} className="mr-2" />
-                  Add Game
-                </button>
               </div>
             )}
           </div>
