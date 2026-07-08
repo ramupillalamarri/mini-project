@@ -8,19 +8,7 @@ const fs = require('fs');
 const router = express.Router();
 
 // Configure Multer for resources
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const dir = path.join(__dirname, '../../uploads/resources');
-    if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const storage = multer.memoryStorage();
 
 const allowedMimeTypes = new Set([
   'application/pdf',
@@ -169,7 +157,7 @@ router.delete('/:subjectId/topics/:topicId', authenticateToken, requireRole('tea
   }
 });
 
-// Create a resource under a topic (handles document/image uploads)
+// Create a resource under a topic (handles database-stored persistent uploads)
 router.post('/topics/:topicId/resources', authenticateToken, requireRole('teacher'), upload.single('file'), async (req, res) => {
   const { topicId } = req.params;
   const { title } = req.body;
@@ -177,18 +165,62 @@ router.post('/topics/:topicId/resources', authenticateToken, requireRole('teache
   if (!title) return res.status(400).json({ error: 'Title is required' });
   if (!req.file) return res.status(400).json({ error: 'File is required' });
 
-  const url = `/uploads/resources/${req.file.filename}`;
-
   try {
+    await pool.query('BEGIN');
+
     const fileExtension = path.extname(req.file.originalname).replace('.', '').toLowerCase();
-    const result = await pool.query(
+    
+    // 1. Insert placeholder row in learning_resources
+    const resourceResult = await pool.query(
       'INSERT INTO learning_resources (topic_id, title, type, url) VALUES ($1, $2, $3, $4) RETURNING *',
-      [topicId, title, fileExtension || 'file', url]
+      [topicId, title, fileExtension || 'file', '']
     );
-    res.status(201).json(result.rows[0]);
+    const resourceId = resourceResult.rows[0].id;
+
+    // 2. Insert binary file data into resource_files
+    const fileResult = await pool.query(
+      'INSERT INTO resource_files (resource_id, file_name, mime_type, file_data) VALUES ($1, $2, $3, $4) RETURNING id',
+      [resourceId, req.file.originalname, req.file.mimetype, req.file.buffer]
+    );
+    const fileId = fileResult.rows[0].id;
+
+    // 3. Update url in learning_resources to point to dynamic retrieval path
+    const finalUrl = `/api/subjects/resources/file/${fileId}`;
+    const updateResult = await pool.query(
+      'UPDATE learning_resources SET url = $1 WHERE id = $2 RETURNING *',
+      [finalUrl, resourceId]
+    );
+
+    await pool.query('COMMIT');
+    res.status(201).json(updateResult.rows[0]);
   } catch (err) {
-    console.error(err);
+    await pool.query('ROLLBACK');
+    console.error('Failed to upload file to database:', err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Retrieve dynamic database-stored resource file
+router.get('/resources/file/:fileId', async (req, res) => {
+  const { fileId } = req.params;
+  try {
+    const result = await pool.query(
+      'SELECT file_name, mime_type, file_data FROM resource_files WHERE id = $1',
+      [fileId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).send('File not found');
+    }
+
+    const file = result.rows[0];
+    
+    res.setHeader('Content-Type', file.mime_type);
+    res.setHeader('Content-Disposition', `inline; filename="${file.file_name}"`);
+    res.send(file.file_data);
+  } catch (err) {
+    console.error('Error fetching file from database:', err);
+    res.status(500).send('Server error');
   }
 });
 

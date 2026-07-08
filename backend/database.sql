@@ -94,3 +94,12 @@ CREATE TABLE IF NOT EXISTS user_game_scores (
 -- Insert sample games
 INSERT INTO games (title, type) VALUES ('Math Quiz', 'quiz') ON CONFLICT DO NOTHING;
 INSERT INTO games (title, type) VALUES ('Memory Match', 'logic') ON CONFLICT DO NOTHING;
+
+-- Resource Files Table (for database-stored persistent uploads)
+CREATE TABLE IF NOT EXISTS resource_files (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  resource_id INTEGER REFERENCES learning_resources(id) ON DELETE CASCADE,
+  file_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(100) NOT NULL,
+  file_data BYTEA NOT NULL
+);
